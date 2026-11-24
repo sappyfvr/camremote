@@ -213,6 +213,7 @@
     <div class="field"><div class="label" data-i18n="setTimer"></div><div class="seg" id="segTimer"></div></div>
     <div class="field"><div class="label" data-i18n="setCamera"></div><div class="seg" id="segFacing"></div></div>
     <div class="field"><div class="label" data-i18n="setTorch"></div><div class="seg" id="segTorch"></div><div class="note" id="torchNote"></div></div>
+    <div class="field"><div class="note" id="watchNote"></div></div>
     <button class="primary" id="closeSettings" data-i18n="done"></button>
   </div>
 </div>
@@ -267,6 +268,7 @@ const I18N = {
     ariaSettings: 'Settings', settingsTitle: 'Default settings',
     settingsHint: 'The camera starts with these every time you open Cam Remote on your watch.',
     setTimer: 'Self-timer', setCamera: 'Camera', setTorch: 'Light', camBack: 'Back', camSelfie: 'Selfie', done: 'Done',
+    watchRules: 'Your watch has its own defaults, set in the Garmin Connect app. Those take priority over the ones here.',
   },
   nl: {
     connecting: 'Verbinden…', ready: 'Klaar voor je horloge',
@@ -295,6 +297,7 @@ const I18N = {
     ariaSettings: 'Instellingen', settingsTitle: 'Standaardinstellingen',
     settingsHint: 'Hiermee begint de camera elke keer dat je Cam Remote op je horloge opent.',
     setTimer: 'Zelfontspanner', setCamera: 'Camera', setTorch: 'Lamp', camBack: 'Achter', camSelfie: 'Selfie', done: 'Klaar',
+    watchRules: 'Je horloge heeft eigen standaarden, ingesteld in de Garmin Connect-app. Die gaan voor op de keuzes hier.',
   },
   de: {
     connecting: 'Verbinden…', ready: 'Bereit für deine Uhr',
@@ -323,6 +326,7 @@ const I18N = {
     ariaSettings: 'Einstellungen', settingsTitle: 'Standardeinstellungen',
     settingsHint: 'Damit startet die Kamera jedes Mal, wenn du Cam Remote auf deiner Uhr öffnest.',
     setTimer: 'Selbstauslöser', setCamera: 'Kamera', setTorch: 'Licht', camBack: 'Hinten', camSelfie: 'Selfie', done: 'Fertig',
+    watchRules: 'Deine Uhr hat eigene Standardwerte aus der Garmin Connect App. Diese haben Vorrang vor den Werten hier.',
   },
   fr: {
     connecting: 'Connexion…', ready: 'Prêt pour votre montre',
@@ -351,6 +355,7 @@ const I18N = {
     ariaSettings: 'Réglages', settingsTitle: 'Réglages par défaut',
     settingsHint: 'La caméra démarre avec ces réglages chaque fois que vous ouvrez Cam Remote sur votre montre.',
     setTimer: 'Retardateur', setCamera: 'Caméra', setTorch: 'Lampe', camBack: 'Arrière', camSelfie: 'Selfie', done: 'Terminé',
+    watchRules: 'Votre montre a ses propres réglages par défaut, définis dans l’app Garmin Connect. Ils sont prioritaires sur ceux d’ici.',
   },
   es: {
     connecting: 'Conectando…', ready: 'Listo para tu reloj',
@@ -379,6 +384,7 @@ const I18N = {
     ariaSettings: 'Ajustes', settingsTitle: 'Ajustes predeterminados',
     settingsHint: 'La cámara empieza con estos ajustes cada vez que abres Cam Remote en tu reloj.',
     setTimer: 'Temporizador', setCamera: 'Cámara', setTorch: 'Luz', camBack: 'Trasera', camSelfie: 'Selfie', done: 'Listo',
+    watchRules: 'Tu reloj tiene sus propios ajustes predeterminados, definidos en la app Garmin Connect. Tienen prioridad sobre los de aquí.',
   },
   it: {
     connecting: 'Connessione…', ready: 'Pronto per l’orologio',
@@ -407,6 +413,7 @@ const I18N = {
     ariaSettings: 'Impostazioni', settingsTitle: 'Impostazioni predefinite',
     settingsHint: 'La fotocamera parte da queste ogni volta che apri Cam Remote sull’orologio.',
     setTimer: 'Autoscatto', setCamera: 'Fotocamera', setTorch: 'Luce', camBack: 'Retro', camSelfie: 'Selfie', done: 'Fine',
+    watchRules: 'Il tuo orologio ha impostazioni predefinite proprie, scelte nell’app Garmin Connect. Hanno la priorità su quelle qui.',
   },
 };
 
@@ -462,6 +469,7 @@ const S = {
   videoTrack: null,
   audioTrack: null,
   torchSupported: false,
+  watchDefaults: null,   // which defaults the watch itself sets (from Garmin Connect), once it has said hello
   switching: null,   // promise while the lens is being switched
   recorder: null,
   recording: false,
@@ -601,7 +609,8 @@ function onCommand(text, time) {
   renderRelay();
 
   if (cmd === 'hello') {
-    applyDefaults();   // the watch app just started: begin from the default settings
+    applyDefaults();          // the watch app just started: begin from the default settings
+    applyWatchDefaults(p);    // defaults chosen in Garmin Connect win over the ones on this page
     publishStatus(p.get('sid'), p.get('seq'));
     return;
   }
@@ -734,6 +743,23 @@ function applyDefaults() {
   setFacing(D.facing);
 }
 
+// The watch sends its own defaults (from the app settings in Garmin Connect) along with "hello":
+// dt = self-timer seconds, dc = back|front, df = on|off. Only the ones chosen there are present.
+function applyWatchDefaults(p) {
+  const dt = p.get('dt');
+  const dc = p.get('dc');
+  const df = p.get('df');
+  S.watchDefaults = {
+    timer: dt !== null && validTimer(Number(dt)),
+    facing: dc === 'front' || dc === 'back',
+    torch: df === 'on' || df === 'off',
+  };
+  if (S.recording || S.countdownTimer) return;
+  if (S.watchDefaults.timer) setTimer(Number(dt));
+  if (S.watchDefaults.facing) setFacing(dc === 'front' ? 'user' : 'environment');
+  if (S.watchDefaults.torch) setTorch(df === 'on');
+}
+
 function setDefault(key, value) {
   D[key] = value;
   if (key === 'timer') store('defTimer', String(value));
@@ -766,6 +792,8 @@ function renderSettings() {
   buildSegment('segFacing', [['environment', t('camBack')], ['user', t('camSelfie')]], D.facing, (v) => setDefault('facing', v));
   buildSegment('segTorch', [[false, t('off')], [true, t('on')]], D.torch, (v) => setDefault('torch', v));
   $('torchNote').textContent = (D.torch && S.camReady && !S.torchSupported) ? t('torchUnsupported') : '';
+  const w = S.watchDefaults;
+  $('watchNote').textContent = (w && (w.timer || w.facing || w.torch)) ? t('watchRules') : '';
 }
 
 function openSettings() {
@@ -1065,13 +1093,30 @@ function topicToCode(topic) {
   return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4)}` : topic;
 }
 
-function readTopic() {
+// The code in the link this page was opened with (#code or ?k=code).
+// A Home Screen icon keeps the link it was made with forever, also after you pair with another code.
+function topicFromLink() {
   const fromHash = location.hash.length > 1 ? codeToTopic(location.hash.slice(1)) : null;
-  if (fromHash) { store('topic', fromHash); return fromHash; }
-  const fromQuery = codeToTopic(new URLSearchParams(location.search).get('k'));
-  if (fromQuery) { store('topic', fromQuery); return fromQuery; }
-  const saved = load('topic');
-  return saved && TOPIC_RE.test(saved) ? saved : null;
+  return fromHash || codeToTopic(new URLSearchParams(location.search).get('k'));
+}
+let linkTopic = topicFromLink();
+
+function readTopic() {
+  const stored = load('topic');
+  const saved = stored && TOPIC_RE.test(stored) ? stored : null;
+  // A code typed on the pairing screen wins over the code in the link it replaced.
+  // Otherwise an old icon would bring the old code back at every start.
+  if (saved && linkTopic && linkTopic !== saved && load('oldLink') === linkTopic) return saved;
+  if (linkTopic) { store('topic', linkTopic); return linkTopic; }
+  return saved;
+}
+
+// Show the active code in the address, so "Add to Home Screen" stores the right link.
+function showTopicInAddress() {
+  if (!S.topic) return;
+  try {
+    history.replaceState(null, '', location.pathname + location.search + '#' + topicToCode(S.topic));
+  } catch (e) { /* not essential */ }
 }
 
 function openSetup() {
@@ -1115,9 +1160,9 @@ $('topicSave').addEventListener('click', () => {
     return;
   }
   store('topic', topic);
+  // The link this page was opened with is now out of date; remember that, so it cannot undo this pairing.
+  if (linkTopic && linkTopic !== topic) store('oldLink', linkTopic);
   lastCmd = null;
-  // Keep the code in the address, so "Zet op beginscherm" remembers it.
-  history.replaceState(null, '', location.pathname + location.search + '#' + topicToCode(topic));
   boot();
 });
 $('topicCancel').addEventListener('click', () => hide('setup'));
@@ -1132,12 +1177,20 @@ function boot() {
     return;
   }
   hide('setup');
+  showTopicInAddress();
   $('soundChk').checked = S.sound;
   if (!S.camReady) show('start');
   connectRelay();
 }
 
-window.addEventListener('hashchange', () => { if (!S.camReady) { lastCmd = null; boot(); } });
+// Someone opened another link in this tab: that is a new link, so it counts.
+window.addEventListener('hashchange', () => {
+  const fromHash = location.hash.length > 1 ? codeToTopic(location.hash.slice(1)) : null;
+  if (!fromHash || fromHash === S.topic || S.camReady) return;
+  linkTopic = fromHash;
+  lastCmd = null;
+  boot();
+});
 applyStaticTexts();
 loadMedia();
 boot();

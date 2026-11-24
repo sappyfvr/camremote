@@ -37,9 +37,9 @@ Lost your code? On the watch: menu → **Pairing code**. On the page: tap the st
 | Switch lens (back ↔ selfie) | via the menu | tap the button **left** of the shutter |
 | Set the self-timer (off → 3 → 5 → 10 → 20 → 30 s) | via the menu | tap the button **right** of the shutter |
 | Switch between **PHOTO** and **VIDEO** | **UP** / **DOWN** | swipe up / down |
-| Menu: mode, lens, light, self-timer, pairing code | hold **UP** | tap the bottom line |
+| Menu: mode, lens, light, self-timer, pairing code | hold **UP** | tap the **Options** button at the bottom |
 
-**Default settings:** tap the gear icon on the Cam Remote page to choose the self-timer, camera (back or selfie) and light the camera starts with. They apply every time you open Cam Remote on your watch.
+**Default settings:** tap the gear icon on the Cam Remote page to choose the self-timer, camera (back or selfie) and light the camera starts with. They apply every time you open Cam Remote on your watch. If you installed the app from the Connect IQ Store, the same defaults are also in the app's settings in Garmin Connect; a value chosen there takes priority.
 
 **Saving to Photos:** everything you take stays in Cam Remote first. Tap the photo button (top right) → **Save to Photos** → choose **Save** in the share menu.
 

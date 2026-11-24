@@ -43,7 +43,8 @@
     position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px;
     display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
   }
-  #relayPill { align-items: flex-start; border-radius: 18px; max-width: calc(100% - 64px); cursor: pointer; }
+  #relayPill { align-items: flex-start; border-radius: 18px; max-width: calc(100% - 124px); cursor: pointer; }
+  .topBtns { display: flex; gap: 8px; flex: none; }
   #relayPill .txt { display: flex; flex-direction: column; min-width: 0; }
   #relaySub { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dot { width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #8e8e93; flex: none; }
@@ -111,6 +112,12 @@
     background: #000; color: #fff; font-size: 16px; -webkit-user-select: text; user-select: text;
   }
   #gallery .card { max-height: 86vh; display: flex; flex-direction: column; }
+  .field { text-align: left; margin: 0 0 18px; }
+  .field .label { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .seg { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: #2c2c2e; }
+  .seg button { flex: 1; padding: 10px 0; border-radius: 9px; font-size: 15px; font-weight: 600; color: var(--muted); }
+  .seg button.sel { background: #fff; color: #000; }
+  .field .note { font-size: 13px; color: var(--orange); margin-top: 7px; line-height: 1.35; }
   #thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; overflow-y: auto; margin: 12px 0; }
   #thumbs img, #thumbs video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: #000; }
 </style>
@@ -125,10 +132,15 @@
     <span class="dot" id="relayDot"></span>
     <span class="txt"><span id="relayText"></span><span id="relaySub"></span></span>
   </div>
-  <button class="round glass" id="galleryBtn" data-i18n-aria="ariaGallery">
-    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
-    <span id="badge"></span>
-  </button>
+  <div class="topBtns">
+    <button class="round glass" id="settingsBtn" data-i18n-aria="ariaSettings">
+      <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <button class="round glass" id="galleryBtn" data-i18n-aria="ariaGallery">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+      <span id="badge"></span>
+    </button>
+  </div>
 </div>
 <div class="pill" id="rec">REC 0:00</div>
 <div class="pill glass" id="toast"></div>
@@ -177,6 +189,7 @@
     <p data-i18n-html="startText"></p>
     <label class="check"><input type="checkbox" id="soundChk"> <span data-i18n="sound"></span></label>
     <button class="primary" id="startBtn" data-i18n="startCamera"></button>
+    <button class="secondary" id="startSettings" data-i18n="settingsTitle"></button>
     <div class="error" id="startError"></div>
   </div>
 </div>
@@ -189,6 +202,18 @@
     <button class="primary" id="saveBtn" data-i18n="saveToPhotos"></button>
     <button class="secondary danger" id="clearBtn" data-i18n="clearAll"></button>
     <button class="secondary" id="closeGallery" data-i18n="close"></button>
+  </div>
+</div>
+
+<!-- Default settings: where the camera starts each time the watch app opens -->
+<div class="overlay" id="settings">
+  <div class="card">
+    <h2 data-i18n="settingsTitle"></h2>
+    <p data-i18n="settingsHint"></p>
+    <div class="field"><div class="label" data-i18n="setTimer"></div><div class="seg" id="segTimer"></div></div>
+    <div class="field"><div class="label" data-i18n="setCamera"></div><div class="seg" id="segFacing"></div></div>
+    <div class="field"><div class="label" data-i18n="setTorch"></div><div class="seg" id="segTorch"></div><div class="note" id="torchNote"></div></div>
+    <button class="primary" id="closeSettings" data-i18n="done"></button>
   </div>
 </div>
 
@@ -239,6 +264,9 @@ const I18N = {
     confirmAfterShare: 'Are they in Photos now? Then you can delete them here to free up space. Delete now?',
     confirmClear: 'Delete all photos and videos from Cam Remote? Anything already saved in Photos stays there.',
     shareFailed: 'Sharing failed: {error}',
+    ariaSettings: 'Settings', settingsTitle: 'Default settings',
+    settingsHint: 'The camera starts with these every time you open Cam Remote on your watch.',
+    setTimer: 'Self-timer', setCamera: 'Camera', setTorch: 'Light', camBack: 'Back', camSelfie: 'Selfie', done: 'Done',
   },
   nl: {
     connecting: 'Verbinden…', ready: 'Klaar voor je horloge',
@@ -264,6 +292,9 @@ const I18N = {
     confirmAfterShare: 'Staan ze nu in Foto’s? Dan kun je ze hier wissen om ruimte vrij te maken. Nu wissen?',
     confirmClear: 'Alle foto’s en video’s uit Cam Remote wissen? Wat je al in Foto’s hebt bewaard, blijft staan.',
     shareFailed: 'Delen mislukt: {error}',
+    ariaSettings: 'Instellingen', settingsTitle: 'Standaardinstellingen',
+    settingsHint: 'Hiermee begint de camera elke keer dat je Cam Remote op je horloge opent.',
+    setTimer: 'Zelfontspanner', setCamera: 'Camera', setTorch: 'Lamp', camBack: 'Achter', camSelfie: 'Selfie', done: 'Klaar',
   },
   de: {
     connecting: 'Verbinden…', ready: 'Bereit für deine Uhr',
@@ -289,6 +320,9 @@ const I18N = {
     confirmAfterShare: 'Sind sie jetzt in Fotos? Dann kannst du sie hier löschen, um Platz zu sparen. Jetzt löschen?',
     confirmClear: 'Alle Fotos und Videos aus Cam Remote löschen? Was schon in Fotos gesichert ist, bleibt erhalten.',
     shareFailed: 'Teilen fehlgeschlagen: {error}',
+    ariaSettings: 'Einstellungen', settingsTitle: 'Standardeinstellungen',
+    settingsHint: 'Damit startet die Kamera jedes Mal, wenn du Cam Remote auf deiner Uhr öffnest.',
+    setTimer: 'Selbstauslöser', setCamera: 'Kamera', setTorch: 'Licht', camBack: 'Hinten', camSelfie: 'Selfie', done: 'Fertig',
   },
   fr: {
     connecting: 'Connexion…', ready: 'Prêt pour votre montre',
@@ -314,6 +348,9 @@ const I18N = {
     confirmAfterShare: 'Sont-elles maintenant dans Photos ? Vous pouvez alors les supprimer ici pour libérer de l’espace. Supprimer maintenant ?',
     confirmClear: 'Supprimer toutes les photos et vidéos de Cam Remote ? Ce qui est déjà enregistré dans Photos est conservé.',
     shareFailed: 'Échec du partage : {error}',
+    ariaSettings: 'Réglages', settingsTitle: 'Réglages par défaut',
+    settingsHint: 'La caméra démarre avec ces réglages chaque fois que vous ouvrez Cam Remote sur votre montre.',
+    setTimer: 'Retardateur', setCamera: 'Caméra', setTorch: 'Lampe', camBack: 'Arrière', camSelfie: 'Selfie', done: 'Terminé',
   },
   es: {
     connecting: 'Conectando…', ready: 'Listo para tu reloj',
@@ -339,6 +376,9 @@ const I18N = {
     confirmAfterShare: '¿Ya están en Fotos? Entonces puedes borrarlas aquí para liberar espacio. ¿Borrar ahora?',
     confirmClear: '¿Borrar todas las fotos y vídeos de Cam Remote? Lo que ya guardaste en Fotos se conserva.',
     shareFailed: 'Error al compartir: {error}',
+    ariaSettings: 'Ajustes', settingsTitle: 'Ajustes predeterminados',
+    settingsHint: 'La cámara empieza con estos ajustes cada vez que abres Cam Remote en tu reloj.',
+    setTimer: 'Temporizador', setCamera: 'Cámara', setTorch: 'Luz', camBack: 'Trasera', camSelfie: 'Selfie', done: 'Listo',
   },
   it: {
     connecting: 'Connessione…', ready: 'Pronto per l’orologio',
@@ -364,6 +404,9 @@ const I18N = {
     confirmAfterShare: 'Sono ora in Foto? Allora puoi eliminarle qui per liberare spazio. Eliminare ora?',
     confirmClear: 'Eliminare tutte le foto e i video da Cam Remote? Quello che hai già salvato in Foto resta.',
     shareFailed: 'Condivisione non riuscita: {error}',
+    ariaSettings: 'Impostazioni', settingsTitle: 'Impostazioni predefinite',
+    settingsHint: 'La fotocamera parte da queste ogni volta che apri Cam Remote sull’orologio.',
+    setTimer: 'Autoscatto', setCamera: 'Fotocamera', setTorch: 'Luce', camBack: 'Retro', camSelfie: 'Selfie', done: 'Fine',
   },
 };
 
@@ -395,12 +438,25 @@ function applyStaticTexts() {
 function store(key, value) { try { localStorage.setItem('camremote.' + key, value); } catch (e) { /* private mode */ } }
 function load(key) { try { return localStorage.getItem('camremote.' + key); } catch (e) { return null; } }
 
+// Default settings, chosen on the settings screen. They are the starting point when the page loads
+// and every time the watch app starts (cmd=hello); the watch then adopts them.
+function loadDefaults() {
+  const timer = load('defTimer') !== null ? load('defTimer') : load('timer');   // 'timer'/'facing': older versions
+  const facing = load('defFacing') || load('facing');
+  return {
+    timer: timer !== null && TIMER_OPTIONS.includes(Number(timer)) ? Number(timer) : 0,
+    facing: facing === 'user' ? 'user' : 'environment',
+    torch: load('defTorch') === '1',
+  };
+}
+const D = loadDefaults();
+
 const S = {
   topic: null,
   mode: 'photo',
-  facing: load('facing') === 'user' ? 'user' : 'environment',
-  torch: false,
-  timer: validTimer(Number(load('timer'))) ? Number(load('timer')) : 0,
+  facing: D.facing,
+  torch: D.torch,
+  timer: D.timer,
   sound: load('sound') !== '0',
   camReady: false,
   videoTrack: null,
@@ -545,6 +601,7 @@ function onCommand(text, time) {
   renderRelay();
 
   if (cmd === 'hello') {
+    applyDefaults();   // the watch app just started: begin from the default settings
     publishStatus(p.get('sid'), p.get('seq'));
     return;
   }
@@ -648,7 +705,6 @@ async function restartVideo() {
 async function setFacing(facing) {
   if (facing === S.facing || S.recording) return;
   S.facing = facing;
-  store('facing', facing);
   renderControls();
   if (!S.camReady) return;
   S.switching = restartVideo();
@@ -666,8 +722,55 @@ function setMode(mode) {
 
 function setTimer(seconds) {
   S.timer = seconds;
-  store('timer', String(seconds));
   renderControls();
+}
+
+// ---------------------------------------------------------------- default settings
+
+function applyDefaults() {
+  if (S.recording || S.countdownTimer) return;
+  setTimer(D.timer);
+  setTorch(D.torch);
+  setFacing(D.facing);
+}
+
+function setDefault(key, value) {
+  D[key] = value;
+  if (key === 'timer') store('defTimer', String(value));
+  else if (key === 'facing') store('defFacing', value);
+  else store('defTorch', value ? '1' : '0');
+  // Show the new default right away, unless a recording or countdown is running.
+  if (!S.recording && !S.countdownTimer) {
+    if (key === 'timer') setTimer(value);
+    else if (key === 'facing') setFacing(value);
+    else setTorch(value);
+  }
+  renderSettings();
+}
+
+function buildSegment(id, options, current, onPick) {
+  const box = $(id);
+  box.textContent = '';
+  options.forEach(([value, label]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    if (value === current) b.classList.add('sel');
+    b.addEventListener('click', () => onPick(value));
+    box.appendChild(b);
+  });
+}
+
+function renderSettings() {
+  buildSegment('segTimer', TIMER_OPTIONS.map((s) => [s, s ? s + 's' : t('off')]), D.timer, (v) => setDefault('timer', v));
+  buildSegment('segFacing', [['environment', t('camBack')], ['user', t('camSelfie')]], D.facing, (v) => setDefault('facing', v));
+  buildSegment('segTorch', [[false, t('off')], [true, t('on')]], D.torch, (v) => setDefault('torch', v));
+  $('torchNote').textContent = (D.torch && S.camReady && !S.torchSupported) ? t('torchUnsupported') : '';
+}
+
+function openSettings() {
+  renderSettings();
+  show('settings');
 }
 
 function setTorch(on) {
@@ -993,6 +1096,9 @@ $('timerBtn').addEventListener('click', () => {
 });
 $('flipBtn').addEventListener('click', () => setFacing(S.facing === 'user' ? 'environment' : 'user'));
 $('galleryBtn').addEventListener('click', openGallery);
+$('settingsBtn').addEventListener('click', openSettings);
+$('startSettings').addEventListener('click', openSettings);
+$('closeSettings').addEventListener('click', () => hide('settings'));
 $('closeGallery').addEventListener('click', () => hide('gallery'));
 $('saveBtn').addEventListener('click', saveAll);
 $('clearBtn').addEventListener('click', async () => {

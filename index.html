@@ -43,7 +43,7 @@
     position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px;
     display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
   }
-  #relayPill { align-items: flex-start; border-radius: 18px; max-width: calc(100% - 64px); }
+  #relayPill { align-items: flex-start; border-radius: 18px; max-width: calc(100% - 64px); cursor: pointer; }
   #relayPill .txt { display: flex; flex-direction: column; min-width: 0; }
   #relaySub { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dot { width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #8e8e93; flex: none; }
@@ -121,11 +121,11 @@
 <div id="count"></div>
 
 <div id="top">
-  <div class="pill glass" id="relayPill">
+  <div class="pill glass" id="relayPill" role="button" data-i18n-aria="ariaRelay">
     <span class="dot" id="relayDot"></span>
-    <span class="txt"><span id="relayText">Verbinden…</span><span id="relaySub"></span></span>
+    <span class="txt"><span id="relayText"></span><span id="relaySub"></span></span>
   </div>
-  <button class="round glass" id="galleryBtn" aria-label="Gemaakte foto's en video's">
+  <button class="round glass" id="galleryBtn" data-i18n-aria="ariaGallery">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
     <span id="badge"></span>
   </button>
@@ -135,35 +135,36 @@
 
 <div id="bottom">
   <div id="modes" class="glass">
-    <button data-mode="photo" class="sel">Foto</button>
-    <button data-mode="video">Video</button>
+    <button data-mode="photo" class="sel" data-i18n="photo"></button>
+    <button data-mode="video" data-i18n="video"></button>
   </div>
   <div id="row">
     <div id="left">
-      <button class="pill glass" id="torchBtn" aria-label="Lamp">
-        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="torchText">Uit</span>
+      <button class="pill glass" id="torchBtn" data-i18n-aria="ariaTorch">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="torchText"></span>
       </button>
-      <button class="pill glass" id="timerBtn" aria-label="Zelfontspanner">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span id="timerText">Uit</span>
+      <button class="pill glass" id="timerBtn" data-i18n-aria="ariaTimer">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span id="timerText"></span>
       </button>
     </div>
-    <button id="shutter" aria-label="Foto maken"><i></i></button>
+    <button id="shutter"><i></i></button>
     <div id="right">
-      <button class="round glass" id="flipBtn" aria-label="Wissel camera">
+      <button class="round glass" id="flipBtn" data-i18n-aria="ariaFlip">
         <svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15.5 12.5a3.5 3.5 0 0 0-6.2-2.2M8.5 13.5a3.5 3.5 0 0 0 6.2 2.2"/><path d="M9.5 8.5v2h2M14.5 17.5v-2h-2"/></svg>
       </button>
     </div>
   </div>
 </div>
 
-<!-- No personal code yet -->
+<!-- Pair with a watch: enter the code the watch shows -->
 <div class="overlay" id="setup">
   <div class="card">
     <img class="logo" src="icon-180.png" alt="">
-    <h1>Cam Remote</h1>
-    <p>Deze pagina heeft je persoonlijke code nodig. Open de link uit de handleiding, of plak de code hieronder.</p>
-    <input type="text" id="topicInput" placeholder="cr-…" autocapitalize="off" autocomplete="off" spellcheck="false">
-    <button class="primary" id="topicSave">Opslaan</button>
+    <h1 data-i18n="setupTitle"></h1>
+    <p data-i18n-html="setupText"></p>
+    <input type="text" id="topicInput" inputmode="numeric" placeholder="123-456-7890" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="primary" id="topicSave" data-i18n="pair"></button>
+    <button class="secondary" id="topicCancel" data-i18n="cancel"></button>
     <div class="error" id="setupError"></div>
   </div>
 </div>
@@ -173,21 +174,21 @@
   <div class="card">
     <img class="logo" src="icon-180.png" alt="">
     <h1>Cam Remote</h1>
-    <p>Zet je iPhone neer, tik op <b>Start camera</b> en bedien hem met je Garmin. Laat deze pagina open; het scherm blijft aan.</p>
-    <label class="check"><input type="checkbox" id="soundChk"> Geluid opnemen bij video</label>
-    <button class="primary" id="startBtn">Start camera</button>
+    <p data-i18n-html="startText"></p>
+    <label class="check"><input type="checkbox" id="soundChk"> <span data-i18n="sound"></span></label>
+    <button class="primary" id="startBtn" data-i18n="startCamera"></button>
     <div class="error" id="startError"></div>
   </div>
 </div>
 
 <div class="overlay" id="gallery">
   <div class="card">
-    <h2 id="galleryTitle">Gemaakt</h2>
-    <p id="galleryHint">Tik op <b>Bewaar in Foto's</b> en kies daarna in het deelmenu <b>Bewaar</b>.</p>
+    <h2 id="galleryTitle"></h2>
+    <p id="galleryHint" data-i18n-html="galleryHint"></p>
     <div id="thumbs"></div>
-    <button class="primary" id="saveBtn">Bewaar in Foto's</button>
-    <button class="secondary danger" id="clearBtn">Wis alles uit Cam Remote</button>
-    <button class="secondary" id="closeGallery">Sluit</button>
+    <button class="primary" id="saveBtn" data-i18n="saveToPhotos"></button>
+    <button class="secondary danger" id="clearBtn" data-i18n="clearAll"></button>
+    <button class="secondary" id="closeGallery" data-i18n="close"></button>
   </div>
 </div>
 
@@ -207,6 +208,189 @@
 const $ = (id) => document.getElementById(id);
 const RELAY = 'https://ntfy.sh/';
 const TOPIC_RE = /^[-_A-Za-z0-9]{8,60}$/;
+const TIMER_OPTIONS = [0, 3, 5, 10, 20, 30];   // self-timer choices on the phone; the watch may send 0..60
+const validTimer = (t) => Number.isInteger(t) && t >= 0 && t <= 60;
+
+// ---------------------------------------------------------------- languages
+// The page follows the iPhone's language; ?lang=de forces one. Menu names in setupText match the watch app.
+
+const I18N = {
+  en: {
+    connecting: 'Connecting…', ready: 'Ready for your watch',
+    lastCmd: 'Last command: {label} · {time}', codeHint: 'Code {code} · tap to change', openWatch: 'Open Cam Remote on your watch',
+    cmdHello: 'connect', cmdPhoto: 'photo', cmdVideo: 'video', cmdSet: 'settings',
+    photo: 'Photo', video: 'Video', on: 'On', off: 'Off',
+    shutterPhoto: 'Take photo', shutterStart: 'Start recording', shutterStop: 'Stop recording',
+    ariaRelay: 'Connection and pairing code', ariaGallery: 'Photos and videos taken', ariaTorch: 'Light', ariaTimer: 'Self-timer', ariaFlip: 'Switch camera',
+    setupTitle: 'Pair your watch',
+    setupText: 'Open Cam Remote on your Garmin. Your pairing code is on the screen (or in the menu under <b>Pairing code</b>). Type it below.',
+    pair: 'Pair', cancel: 'Cancel', badCode: 'That is not a valid code. It has 10 digits, like 123-456-7890.',
+    startText: 'Put your iPhone down, tap <b>Start camera</b> and control it with your Garmin. Keep this page open; the screen stays on.',
+    sound: 'Record sound with video', startCamera: 'Start camera',
+    noBrowserCam: 'This browser can’t use the camera. Open the page in Safari.',
+    camDenied: 'No access to the camera. Allow it via the aA menu in the address bar → Website Settings.',
+    camFailed: 'The camera could not start ({error}).', camReady: 'Camera ready', flipFailed: 'Switching camera failed',
+    cancelled: 'Cancelled', tapStartFirst: 'Tap Start camera first', camNotReady: 'Camera is not ready yet', photoFailed: 'Photo failed',
+    videoUnsupported: 'Video is not supported here', videoFailed: 'Could not start video',
+    photoTaken: 'Photo taken ({n})', videoTaken: 'Video saved ({n})', torchUnsupported: 'The light can’t be controlled from Safari',
+    galleryEmpty: 'Nothing taken yet', galleryOne: '1 item', galleryMany: '{n} items',
+    galleryHint: 'Tap <b>Save to Photos</b>, then choose <b>Save</b> in the share menu.',
+    saveToPhotos: 'Save to Photos', clearAll: 'Delete all from Cam Remote', close: 'Close',
+    confirmAfterShare: 'Are they in Photos now? Then you can delete them here to free up space. Delete now?',
+    confirmClear: 'Delete all photos and videos from Cam Remote? Anything already saved in Photos stays there.',
+    shareFailed: 'Sharing failed: {error}',
+  },
+  nl: {
+    connecting: 'Verbinden…', ready: 'Klaar voor je horloge',
+    lastCmd: 'Laatste opdracht: {label} · {time}', codeHint: 'Code {code} · tik om te wijzigen', openWatch: 'Open Cam Remote op je horloge',
+    cmdHello: 'verbinden', cmdPhoto: 'foto', cmdVideo: 'video', cmdSet: 'instellingen',
+    photo: 'Foto', video: 'Video', on: 'Aan', off: 'Uit',
+    shutterPhoto: 'Foto maken', shutterStart: 'Start opname', shutterStop: 'Stop opname',
+    ariaRelay: 'Verbinding en koppelcode', ariaGallery: 'Gemaakte foto’s en video’s', ariaTorch: 'Lamp', ariaTimer: 'Zelfontspanner', ariaFlip: 'Wissel camera',
+    setupTitle: 'Koppel je horloge',
+    setupText: 'Open Cam Remote op je Garmin. Je koppelcode staat op het scherm (of in het menu bij <b>Koppelcode</b>). Typ hem hieronder.',
+    pair: 'Koppelen', cancel: 'Annuleer', badCode: 'Dat is geen geldige code. Hij heeft 10 cijfers, zoals 123-456-7890.',
+    startText: 'Zet je iPhone neer, tik op <b>Start camera</b> en bedien hem met je Garmin. Laat deze pagina open; het scherm blijft aan.',
+    sound: 'Geluid opnemen bij video', startCamera: 'Start camera',
+    noBrowserCam: 'Deze browser kan de camera niet gebruiken. Open de pagina in Safari.',
+    camDenied: 'Geen toegang tot de camera. Sta het toe via het aA-menu in de adresbalk → Website-instellingen.',
+    camFailed: 'De camera kon niet starten ({error}).', camReady: 'Camera staat klaar', flipFailed: 'Wisselen van camera mislukt',
+    cancelled: 'Afgebroken', tapStartFirst: 'Tik eerst op Start camera', camNotReady: 'Camera is nog niet klaar', photoFailed: 'Foto mislukt',
+    videoUnsupported: 'Video wordt hier niet ondersteund', videoFailed: 'Video starten mislukt',
+    photoTaken: 'Foto gemaakt ({n})', videoTaken: 'Video gemaakt ({n})', torchUnsupported: 'De lamp is niet te bedienen vanuit Safari',
+    galleryEmpty: 'Nog niets gemaakt', galleryOne: '1 opname', galleryMany: '{n} opnames',
+    galleryHint: 'Tik op <b>Bewaar in Foto’s</b> en kies daarna in het deelmenu <b>Bewaar</b>.',
+    saveToPhotos: 'Bewaar in Foto’s', clearAll: 'Wis alles uit Cam Remote', close: 'Sluit',
+    confirmAfterShare: 'Staan ze nu in Foto’s? Dan kun je ze hier wissen om ruimte vrij te maken. Nu wissen?',
+    confirmClear: 'Alle foto’s en video’s uit Cam Remote wissen? Wat je al in Foto’s hebt bewaard, blijft staan.',
+    shareFailed: 'Delen mislukt: {error}',
+  },
+  de: {
+    connecting: 'Verbinden…', ready: 'Bereit für deine Uhr',
+    lastCmd: 'Letzter Befehl: {label} · {time}', codeHint: 'Code {code} · tippen zum Ändern', openWatch: 'Öffne Cam Remote auf deiner Uhr',
+    cmdHello: 'verbinden', cmdPhoto: 'Foto', cmdVideo: 'Video', cmdSet: 'Einstellungen',
+    photo: 'Foto', video: 'Video', on: 'An', off: 'Aus',
+    shutterPhoto: 'Foto aufnehmen', shutterStart: 'Aufnahme starten', shutterStop: 'Aufnahme stoppen',
+    ariaRelay: 'Verbindung und Kopplungscode', ariaGallery: 'Aufgenommene Fotos und Videos', ariaTorch: 'Licht', ariaTimer: 'Selbstauslöser', ariaFlip: 'Kamera wechseln',
+    setupTitle: 'Uhr koppeln',
+    setupText: 'Öffne Cam Remote auf deiner Garmin. Dein Kopplungscode steht auf dem Display (oder im Menü unter <b>Kopplungscode</b>). Gib ihn unten ein.',
+    pair: 'Koppeln', cancel: 'Abbrechen', badCode: 'Das ist kein gültiger Code. Er hat 10 Ziffern, z. B. 123-456-7890.',
+    startText: 'Stell dein iPhone hin, tippe auf <b>Kamera starten</b> und steuere es mit deiner Garmin. Lass diese Seite offen; der Bildschirm bleibt an.',
+    sound: 'Ton bei Videos aufnehmen', startCamera: 'Kamera starten',
+    noBrowserCam: 'Dieser Browser kann die Kamera nicht nutzen. Öffne die Seite in Safari.',
+    camDenied: 'Kein Zugriff auf die Kamera. Erlaube ihn über das aA-Menü in der Adressleiste → Website-Einstellungen.',
+    camFailed: 'Die Kamera konnte nicht starten ({error}).', camReady: 'Kamera bereit', flipFailed: 'Kamerawechsel fehlgeschlagen',
+    cancelled: 'Abgebrochen', tapStartFirst: 'Tippe zuerst auf Kamera starten', camNotReady: 'Kamera ist noch nicht bereit', photoFailed: 'Foto fehlgeschlagen',
+    videoUnsupported: 'Video wird hier nicht unterstützt', videoFailed: 'Video konnte nicht starten',
+    photoTaken: 'Foto aufgenommen ({n})', videoTaken: 'Video aufgenommen ({n})', torchUnsupported: 'Das Licht lässt sich in Safari nicht steuern',
+    galleryEmpty: 'Noch nichts aufgenommen', galleryOne: '1 Aufnahme', galleryMany: '{n} Aufnahmen',
+    galleryHint: 'Tippe auf <b>In Fotos sichern</b> und wähle dann im Teilen-Menü <b>Sichern</b>.',
+    saveToPhotos: 'In Fotos sichern', clearAll: 'Alles aus Cam Remote löschen', close: 'Schließen',
+    confirmAfterShare: 'Sind sie jetzt in Fotos? Dann kannst du sie hier löschen, um Platz zu sparen. Jetzt löschen?',
+    confirmClear: 'Alle Fotos und Videos aus Cam Remote löschen? Was schon in Fotos gesichert ist, bleibt erhalten.',
+    shareFailed: 'Teilen fehlgeschlagen: {error}',
+  },
+  fr: {
+    connecting: 'Connexion…', ready: 'Prêt pour votre montre',
+    lastCmd: 'Dernière commande : {label} · {time}', codeHint: 'Code {code} · touchez pour modifier', openWatch: 'Ouvrez Cam Remote sur votre montre',
+    cmdHello: 'connexion', cmdPhoto: 'photo', cmdVideo: 'vidéo', cmdSet: 'réglages',
+    photo: 'Photo', video: 'Vidéo', on: 'Oui', off: 'Non',
+    shutterPhoto: 'Prendre une photo', shutterStart: 'Démarrer la vidéo', shutterStop: 'Arrêter la vidéo',
+    ariaRelay: 'Connexion et code d’association', ariaGallery: 'Photos et vidéos prises', ariaTorch: 'Lampe', ariaTimer: 'Retardateur', ariaFlip: 'Changer de caméra',
+    setupTitle: 'Associer votre montre',
+    setupText: 'Ouvrez Cam Remote sur votre Garmin. Votre code d’association s’affiche à l’écran (ou dans le menu sous <b>Code d’association</b>). Saisissez-le ci-dessous.',
+    pair: 'Associer', cancel: 'Annuler', badCode: 'Ce code n’est pas valide. Il comporte 10 chiffres, par ex. 123-456-7890.',
+    startText: 'Posez votre iPhone, touchez <b>Démarrer la caméra</b> et pilotez-le avec votre Garmin. Laissez cette page ouverte ; l’écran reste allumé.',
+    sound: 'Enregistrer le son des vidéos', startCamera: 'Démarrer la caméra',
+    noBrowserCam: 'Ce navigateur ne peut pas utiliser la caméra. Ouvrez la page dans Safari.',
+    camDenied: 'Pas d’accès à la caméra. Autorisez-le via le menu aA de la barre d’adresse → Réglages du site web.',
+    camFailed: 'La caméra n’a pas pu démarrer ({error}).', camReady: 'Caméra prête', flipFailed: 'Changement de caméra impossible',
+    cancelled: 'Annulé', tapStartFirst: 'Touchez d’abord Démarrer la caméra', camNotReady: 'La caméra n’est pas encore prête', photoFailed: 'Échec de la photo',
+    videoUnsupported: 'La vidéo n’est pas prise en charge ici', videoFailed: 'Impossible de démarrer la vidéo',
+    photoTaken: 'Photo prise ({n})', videoTaken: 'Vidéo enregistrée ({n})', torchUnsupported: 'La lampe ne peut pas être contrôlée depuis Safari',
+    galleryEmpty: 'Rien pour l’instant', galleryOne: '1 prise', galleryMany: '{n} prises',
+    galleryHint: 'Touchez <b>Enregistrer dans Photos</b>, puis choisissez <b>Enregistrer</b> dans le menu de partage.',
+    saveToPhotos: 'Enregistrer dans Photos', clearAll: 'Tout supprimer de Cam Remote', close: 'Fermer',
+    confirmAfterShare: 'Sont-elles maintenant dans Photos ? Vous pouvez alors les supprimer ici pour libérer de l’espace. Supprimer maintenant ?',
+    confirmClear: 'Supprimer toutes les photos et vidéos de Cam Remote ? Ce qui est déjà enregistré dans Photos est conservé.',
+    shareFailed: 'Échec du partage : {error}',
+  },
+  es: {
+    connecting: 'Conectando…', ready: 'Listo para tu reloj',
+    lastCmd: 'Última orden: {label} · {time}', codeHint: 'Código {code} · toca para cambiar', openWatch: 'Abre Cam Remote en tu reloj',
+    cmdHello: 'conexión', cmdPhoto: 'foto', cmdVideo: 'vídeo', cmdSet: 'ajustes',
+    photo: 'Foto', video: 'Vídeo', on: 'Sí', off: 'No',
+    shutterPhoto: 'Hacer foto', shutterStart: 'Iniciar grabación', shutterStop: 'Detener grabación',
+    ariaRelay: 'Conexión y código de vínculo', ariaGallery: 'Fotos y vídeos hechos', ariaTorch: 'Luz', ariaTimer: 'Temporizador', ariaFlip: 'Cambiar cámara',
+    setupTitle: 'Vincula tu reloj',
+    setupText: 'Abre Cam Remote en tu Garmin. Tu código de vínculo aparece en la pantalla (o en el menú, en <b>Código de vínculo</b>). Escríbelo abajo.',
+    pair: 'Vincular', cancel: 'Cancelar', badCode: 'Ese código no es válido. Tiene 10 cifras, como 123-456-7890.',
+    startText: 'Coloca tu iPhone, toca <b>Iniciar cámara</b> y contrólalo con tu Garmin. Deja esta página abierta; la pantalla se queda encendida.',
+    sound: 'Grabar sonido en los vídeos', startCamera: 'Iniciar cámara',
+    noBrowserCam: 'Este navegador no puede usar la cámara. Abre la página en Safari.',
+    camDenied: 'Sin acceso a la cámara. Permítelo en el menú aA de la barra de direcciones → Ajustes del sitio web.',
+    camFailed: 'La cámara no pudo iniciarse ({error}).', camReady: 'Cámara lista', flipFailed: 'No se pudo cambiar de cámara',
+    cancelled: 'Cancelado', tapStartFirst: 'Toca primero Iniciar cámara', camNotReady: 'La cámara aún no está lista', photoFailed: 'Error al hacer la foto',
+    videoUnsupported: 'El vídeo no es compatible aquí', videoFailed: 'No se pudo iniciar el vídeo',
+    photoTaken: 'Foto hecha ({n})', videoTaken: 'Vídeo grabado ({n})', torchUnsupported: 'La luz no se puede controlar desde Safari',
+    galleryEmpty: 'Aún no hay nada', galleryOne: '1 toma', galleryMany: '{n} tomas',
+    galleryHint: 'Toca <b>Guardar en Fotos</b> y elige <b>Guardar</b> en el menú de compartir.',
+    saveToPhotos: 'Guardar en Fotos', clearAll: 'Borrar todo de Cam Remote', close: 'Cerrar',
+    confirmAfterShare: '¿Ya están en Fotos? Entonces puedes borrarlas aquí para liberar espacio. ¿Borrar ahora?',
+    confirmClear: '¿Borrar todas las fotos y vídeos de Cam Remote? Lo que ya guardaste en Fotos se conserva.',
+    shareFailed: 'Error al compartir: {error}',
+  },
+  it: {
+    connecting: 'Connessione…', ready: 'Pronto per l’orologio',
+    lastCmd: 'Ultimo comando: {label} · {time}', codeHint: 'Codice {code} · tocca per cambiare', openWatch: 'Apri Cam Remote sull’orologio',
+    cmdHello: 'connessione', cmdPhoto: 'foto', cmdVideo: 'video', cmdSet: 'impostazioni',
+    photo: 'Foto', video: 'Video', on: 'Sì', off: 'No',
+    shutterPhoto: 'Scatta foto', shutterStart: 'Avvia registrazione', shutterStop: 'Ferma registrazione',
+    ariaRelay: 'Connessione e codice di abbinamento', ariaGallery: 'Foto e video scattati', ariaTorch: 'Luce', ariaTimer: 'Autoscatto', ariaFlip: 'Cambia fotocamera',
+    setupTitle: 'Abbina l’orologio',
+    setupText: 'Apri Cam Remote sul tuo Garmin. Il codice di abbinamento è sullo schermo (o nel menu alla voce <b>Codice abbinamento</b>). Inseriscilo qui sotto.',
+    pair: 'Abbina', cancel: 'Annulla', badCode: 'Codice non valido. Ha 10 cifre, ad es. 123-456-7890.',
+    startText: 'Appoggia l’iPhone, tocca <b>Avvia fotocamera</b> e comandalo con il tuo Garmin. Lascia aperta questa pagina; lo schermo resta acceso.',
+    sound: 'Registra l’audio nei video', startCamera: 'Avvia fotocamera',
+    noBrowserCam: 'Questo browser non può usare la fotocamera. Apri la pagina in Safari.',
+    camDenied: 'Nessun accesso alla fotocamera. Consentilo dal menu aA nella barra degli indirizzi → Impostazioni sito web.',
+    camFailed: 'Impossibile avviare la fotocamera ({error}).', camReady: 'Fotocamera pronta', flipFailed: 'Cambio fotocamera non riuscito',
+    cancelled: 'Annullato', tapStartFirst: 'Tocca prima Avvia fotocamera', camNotReady: 'La fotocamera non è ancora pronta', photoFailed: 'Foto non riuscita',
+    videoUnsupported: 'Video non supportato qui', videoFailed: 'Impossibile avviare il video',
+    photoTaken: 'Foto scattata ({n})', videoTaken: 'Video registrato ({n})', torchUnsupported: 'La luce non si può controllare da Safari',
+    galleryEmpty: 'Ancora niente', galleryOne: '1 scatto', galleryMany: '{n} scatti',
+    galleryHint: 'Tocca <b>Salva in Foto</b> e scegli <b>Salva</b> nel menu di condivisione.',
+    saveToPhotos: 'Salva in Foto', clearAll: 'Elimina tutto da Cam Remote', close: 'Chiudi',
+    confirmAfterShare: 'Sono ora in Foto? Allora puoi eliminarle qui per liberare spazio. Eliminare ora?',
+    confirmClear: 'Eliminare tutte le foto e i video da Cam Remote? Quello che hai già salvato in Foto resta.',
+    shareFailed: 'Condivisione non riuscita: {error}',
+  },
+};
+
+function pickLang() {
+  const forced = new URLSearchParams(location.search).get('lang');
+  const wanted = [forced, ...(navigator.languages || []), navigator.language].filter(Boolean);
+  for (const l of wanted) {
+    const code = String(l).toLowerCase().slice(0, 2);
+    if (I18N[code]) return code;
+  }
+  return 'en';
+}
+const LANG = pickLang();
+
+function t(key, vars) {
+  let s = (I18N[LANG] && I18N[LANG][key]) || I18N.en[key] || key;
+  if (vars) Object.keys(vars).forEach((k) => { s = s.split('{' + k + '}').join(String(vars[k])); });
+  return s;
+}
+
+// Static texts. data-i18n-html only ever receives our own strings above, never user or relay data.
+function applyStaticTexts() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+}
 
 function store(key, value) { try { localStorage.setItem('camremote.' + key, value); } catch (e) { /* private mode */ } }
 function load(key) { try { return localStorage.getItem('camremote.' + key); } catch (e) { return null; } }
@@ -216,12 +400,13 @@ const S = {
   mode: 'photo',
   facing: load('facing') === 'user' ? 'user' : 'environment',
   torch: false,
-  timer: [0, 3, 10].includes(Number(load('timer'))) ? Number(load('timer')) : 0,
+  timer: validTimer(Number(load('timer'))) ? Number(load('timer')) : 0,
   sound: load('sound') !== '0',
   camReady: false,
   videoTrack: null,
   audioTrack: null,
   torchSupported: false,
+  switching: null,   // promise while the lens is being switched
   recorder: null,
   recording: false,
   recStart: 0,
@@ -280,10 +465,10 @@ function renderControls() {
   const sh = $('shutter');
   sh.classList.toggle('video', S.mode === 'video');
   sh.classList.toggle('recording', S.recording);
-  sh.setAttribute('aria-label', S.mode === 'photo' ? 'Foto maken' : (S.recording ? 'Stop opname' : 'Start opname'));
-  $('torchText').textContent = S.torch ? 'Aan' : 'Uit';
+  sh.setAttribute('aria-label', t(S.mode === 'photo' ? 'shutterPhoto' : (S.recording ? 'shutterStop' : 'shutterStart')));
+  $('torchText').textContent = t(S.torch ? 'on' : 'off');
   $('torchBtn').classList.toggle('lit', S.torch);
-  $('timerText').textContent = S.timer ? S.timer + 's' : 'Uit';
+  $('timerText').textContent = S.timer ? S.timer + 's' : t('off');
   $('flipBtn').disabled = S.recording;
   $('rec').style.display = S.recording ? 'inline-flex' : 'none';
   $('video').classList.toggle('mirror', S.facing === 'user');
@@ -309,10 +494,10 @@ let lastCmd = null;
 
 function renderRelay() {
   $('relayDot').className = 'dot ' + (relayOpen ? 'ok' : 'warn');
-  $('relayText').textContent = relayOpen ? 'Klaar voor je horloge' : 'Verbinden…';
+  $('relayText').textContent = t(relayOpen ? 'ready' : 'connecting');
   $('relaySub').textContent = lastCmd
-    ? `Laatste opdracht: ${lastCmd.label} · ${lastCmd.time}`
-    : 'Open Cam Remote op je horloge';
+    ? t('lastCmd', lastCmd)
+    : (S.topic ? t('codeHint', { code: topicToCode(S.topic) }) : t('openWatch'));
 }
 
 function connectRelay() {
@@ -354,8 +539,8 @@ function onCommand(text, time) {
 
   const now = new Date();
   lastCmd = {
-    label: { hello: 'verbinden', shutter: (p.get('mode') || S.mode) === 'video' ? 'video' : 'foto', set: 'instellingen' }[cmd] || cmd,
-    time: now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    label: t({ hello: 'cmdHello', shutter: (p.get('mode') || S.mode) === 'video' ? 'cmdVideo' : 'cmdPhoto', set: 'cmdSet' }[cmd] || cmd),
+    time: now.toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
   };
   renderRelay();
 
@@ -375,18 +560,37 @@ function applySettings(p) {
   if (cam === 'front' || cam === 'back') setFacing(cam === 'front' ? 'user' : 'environment');
   const flash = p.get('flash');
   if (flash === 'on' || flash === 'off') setTorch(flash === 'on');
-  const t = Number(p.get('timer'));
-  if ([0, 3, 10].includes(t)) setTimer(t);
+  const t = p.get('timer');
+  if (t !== null && validTimer(Number(t))) setTimer(Number(t));
 }
 
 // ---------------------------------------------------------------- camera
 
-function videoConstraints() {
-  return { facingMode: { ideal: S.facing }, width: { ideal: 3840 }, height: { ideal: 2160 } };
+// Ask for the wanted camera strictly ("exact"). With only a preference, Safari may keep the rear camera
+// when switching to selfie, because the rear camera matches the 4K wish better than the selfie camera.
+// Devices that can't tell which way a camera faces (desktop webcams) get the preference instead.
+function videoConstraints(strict) {
+  return {
+    facingMode: strict ? { exact: S.facing } : { ideal: S.facing },
+    width: { ideal: 3840 },
+    height: { ideal: 2160 },
+  };
+}
+
+async function getCameraStream(withAudio) {
+  try {
+    return await navigator.mediaDevices.getUserMedia({ video: videoConstraints(true), audio: withAudio });
+  } catch (err) {
+    if (err.name !== 'OverconstrainedError' && err.name !== 'NotFoundError') throw err;
+    return navigator.mediaDevices.getUserMedia({ video: videoConstraints(false), audio: withAudio });
+  }
 }
 
 function attachVideo(track) {
   S.videoTrack = track;
+  // Trust what the camera reports, so the mirror view and the watch match the lens that is really on.
+  const actual = track.getSettings ? track.getSettings().facingMode : null;
+  if (actual === 'user' || actual === 'environment') S.facing = actual;
   const v = $('video');
   v.srcObject = new MediaStream([track]);
   v.play().catch(() => {});
@@ -402,40 +606,43 @@ async function startCamera() {
   store('sound', S.sound ? '1' : '0');
   $('startError').textContent = '';
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    $('startError').textContent = 'Deze browser kan de camera niet gebruiken. Open de pagina in Safari.';
+    $('startError').textContent = t('noBrowserCam');
     return;
   }
   try {
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: S.sound });
+      stream = await getCameraStream(S.sound);
     } catch (err) {
       if (!S.sound || err.name !== 'NotAllowedError') throw err;
       S.sound = false;   // microphone refused: carry on without sound
-      stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: false });
+      stream = await getCameraStream(false);
     }
     S.audioTrack = stream.getAudioTracks()[0] || null;
     attachVideo(stream.getVideoTracks()[0]);
     S.camReady = true;
     hide('start');
     requestWakeLock();
-    toast('Camera staat klaar');
+    toast(t('camReady'));
   } catch (err) {
     $('startError').textContent = err && err.name === 'NotAllowedError'
-      ? 'Geen toegang tot de camera. Sta het toe via het aA-menu in de adresbalk → Website-instellingen.'
-      : 'De camera kon niet starten (' + (err && err.name || 'onbekend') + ').';
+      ? t('camDenied')
+      : t('camFailed', { error: (err && err.name) || '?' });
   }
 }
 
 async function restartVideo() {
-  try {
-    if (S.videoTrack) S.videoTrack.stop();
-    const s = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: false });
-    attachVideo(s.getVideoTracks()[0]);
-    return true;
-  } catch (err) {
-    return false;
+  if (S.videoTrack) S.videoTrack.stop();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const s = await getCameraStream(false);
+      attachVideo(s.getVideoTracks()[0]);
+      return true;
+    } catch (err) {
+      await new Promise((r) => setTimeout(r, 400));   // iOS sometimes needs a moment to release the previous lens
+    }
   }
+  return false;
 }
 
 async function setFacing(facing) {
@@ -443,7 +650,11 @@ async function setFacing(facing) {
   S.facing = facing;
   store('facing', facing);
   renderControls();
-  if (S.camReady && !(await restartVideo())) toast('Wisselen van camera mislukt');
+  if (!S.camReady) return;
+  S.switching = restartVideo();
+  const ok = await S.switching;
+  S.switching = null;
+  if (!ok) toast(t('flipFailed'));
 }
 
 function setMode(mode) {
@@ -476,7 +687,7 @@ function shutter() {
   initAudio();
   if (S.countdownTimer) {
     cancelCountdown();
-    toast('Afgebroken');
+    toast(t('cancelled'));
     return;
   }
   if (S.mode === 'video' && S.recording) {
@@ -484,14 +695,15 @@ function shutter() {
     return;
   }
   if (!S.camReady) {
-    toast('Tik eerst op Start camera');
+    toast(t('tapStartFirst'));
     return;
   }
   if (S.timer > 0) startCountdown();
   else fire();
 }
 
-function fire() {
+async function fire() {
+  if (S.switching) await S.switching;   // a lens switch from the same command is still running
   if (S.mode === 'video') startRecording();
   else takePhoto();
 }
@@ -509,7 +721,7 @@ function startCountdown() {
       fire();
     } else {
       el.textContent = S.countdown;
-      beep(660, 0.08);
+      if (S.countdown <= 5) beep(660, 0.08);   // long timers only beep for the last 5 seconds
     }
   }, 1000);
 }
@@ -526,7 +738,7 @@ function takePhoto() {
   const w = v.videoWidth;
   const h = v.videoHeight;
   if (!w || !h) {
-    toast('Camera is nog niet klaar');
+    toast(t('camNotReady'));
     return;
   }
   const canvas = document.createElement('canvas');
@@ -537,7 +749,7 @@ function takePhoto() {
   beep(1800, 0.05);
   canvas.toBlob((blob) => {
     if (blob) addMedia(blob, 'jpg');
-    else toast('Foto mislukt');
+    else toast(t('photoFailed'));
   }, 'image/jpeg', 0.92);
 }
 
@@ -554,7 +766,7 @@ async function ensureAudio() {
 
 async function startRecording() {
   if (!window.MediaRecorder) {
-    toast('Video wordt hier niet ondersteund');
+    toast(t('videoUnsupported'));
     return;
   }
   await ensureAudio();
@@ -566,7 +778,7 @@ async function startRecording() {
   try {
     rec = new MediaRecorder(new MediaStream(tracks), type ? { mimeType: type } : undefined);
   } catch (e) {
-    toast('Video starten mislukt');
+    toast(t('videoFailed'));
     return;
   }
   const chunks = [];
@@ -626,7 +838,7 @@ async function addMedia(blob, ext) {
   }
   S.media.push(item);
   renderBadge();
-  toast(ext === 'jpg' ? `Foto gemaakt (${S.media.length})` : `Video gemaakt (${S.media.length})`);
+  toast(t(ext === 'jpg' ? 'photoTaken' : 'videoTaken', { n: S.media.length }));
 }
 
 async function loadMedia() {
@@ -671,7 +883,7 @@ function openGallery() {
     box.appendChild(el);
   });
   const n = S.media.length;
-  $('galleryTitle').textContent = n ? (n === 1 ? '1 opname' : `${n} opnames`) : 'Nog niets gemaakt';
+  $('galleryTitle').textContent = n ? (n === 1 ? t('galleryOne') : t('galleryMany', { n })) : t('galleryEmpty');
   $('galleryHint').style.display = n ? '' : 'none';
   $('saveBtn').disabled = !n;
   $('clearBtn').disabled = !n;
@@ -686,12 +898,12 @@ async function saveAll() {
   if (navigator.canShare && navigator.canShare({ files })) {
     try {
       await navigator.share({ files });
-      if (confirm('Staan ze nu in Foto\'s? Dan kun je ze hier wissen om ruimte vrij te maken. Nu wissen?')) {
+      if (confirm(t('confirmAfterShare'))) {
         await clearMedia();
         openGallery();
       }
     } catch (err) {
-      if (err && err.name !== 'AbortError') toast('Delen mislukt: ' + err.name);
+      if (err && err.name !== 'AbortError') toast(t('shareFailed', { error: err.name }));
     }
   } else {
     // Desktop browsers: download the files instead.
@@ -731,13 +943,39 @@ document.addEventListener('visibilitychange', async () => {
 
 // ---------------------------------------------------------------- wiring
 
+// The watch shows a 10-digit pairing code ("482-093-7556"); its relay topic is "cr-" + the digits.
+// Full topics from older links ("cr-…") and the earlier 8-character codes keep working.
+function codeToTopic(input) {
+  let s = String(input || '').trim();
+  try { s = decodeURIComponent(s); } catch (e) { /* keep as typed */ }
+  s = s.replace(/^.*#(k=)?/, '');
+  if (/^cr-[A-Za-z0-9]{8,40}$/.test(s)) return s;
+  const digits = s.replace(/[^0-9]/g, '');
+  if (digits.length === 10 && /^[0-9\s\-.]+$/.test(s)) return 'cr-' + digits;
+  const c = s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return c.length === 8 ? 'cr-' + c : null;
+}
+
+function topicToCode(topic) {
+  const c = topic.replace(/^cr-/, '');
+  if (/^[0-9]{10}$/.test(c)) return `${c.slice(0, 3)}-${c.slice(3, 6)}-${c.slice(6)}`;
+  return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4)}` : topic;
+}
+
 function readTopic() {
-  const fromHash = decodeURIComponent(location.hash.replace(/^#(k=)?/, ''));
-  if (TOPIC_RE.test(fromHash)) { store('topic', fromHash); return fromHash; }
-  const fromQuery = new URLSearchParams(location.search).get('k');
-  if (fromQuery && TOPIC_RE.test(fromQuery)) { store('topic', fromQuery); return fromQuery; }
+  const fromHash = location.hash.length > 1 ? codeToTopic(location.hash.slice(1)) : null;
+  if (fromHash) { store('topic', fromHash); return fromHash; }
+  const fromQuery = codeToTopic(new URLSearchParams(location.search).get('k'));
+  if (fromQuery) { store('topic', fromQuery); return fromQuery; }
   const saved = load('topic');
   return saved && TOPIC_RE.test(saved) ? saved : null;
+}
+
+function openSetup() {
+  $('topicInput').value = S.topic ? topicToCode(S.topic) : '';
+  $('topicCancel').style.display = S.topic ? '' : 'none';
+  $('setupError').textContent = '';
+  show('setup');
 }
 
 $('shutter').addEventListener('click', shutter);
@@ -746,47 +984,55 @@ $('modes').addEventListener('click', (e) => {
   if (b) setMode(b.dataset.mode);
 });
 $('torchBtn').addEventListener('click', () => {
-  if (S.camReady && !S.torchSupported) toast('De lamp is niet te bedienen vanuit Safari');
+  if (S.camReady && !S.torchSupported) toast(t('torchUnsupported'));
   setTorch(!S.torch);
 });
-$('timerBtn').addEventListener('click', () => setTimer(S.timer === 0 ? 3 : (S.timer === 3 ? 10 : 0)));
+$('timerBtn').addEventListener('click', () => {
+  const i = TIMER_OPTIONS.indexOf(S.timer);
+  setTimer(TIMER_OPTIONS[(i + 1) % TIMER_OPTIONS.length]);
+});
 $('flipBtn').addEventListener('click', () => setFacing(S.facing === 'user' ? 'environment' : 'user'));
 $('galleryBtn').addEventListener('click', openGallery);
 $('closeGallery').addEventListener('click', () => hide('gallery'));
 $('saveBtn').addEventListener('click', saveAll);
 $('clearBtn').addEventListener('click', async () => {
-  if (confirm('Alle foto\'s en video\'s uit Cam Remote wissen? Wat je al in Foto\'s hebt bewaard, blijft staan.')) {
+  if (confirm(t('confirmClear'))) {
     await clearMedia();
     openGallery();
   }
 });
 $('startBtn').addEventListener('click', startCamera);
 $('topicSave').addEventListener('click', () => {
-  const value = $('topicInput').value.trim().replace(/^.*#(k=)?/, '');
-  if (!TOPIC_RE.test(value)) {
-    $('setupError').textContent = 'Dat lijkt geen geldige code.';
+  const topic = codeToTopic($('topicInput').value);
+  if (!topic) {
+    $('setupError').textContent = t('badCode');
     return;
   }
-  store('topic', value);
-  location.hash = value;
+  store('topic', topic);
+  lastCmd = null;
+  // Keep the code in the address, so "Zet op beginscherm" remembers it.
+  history.replaceState(null, '', location.pathname + location.search + '#' + topicToCode(topic));
   boot();
 });
+$('topicCancel').addEventListener('click', () => hide('setup'));
+$('relayPill').addEventListener('click', openSetup);
 
 function boot() {
   S.topic = readTopic();
   renderControls();
   renderRelay();
   if (!S.topic) {
-    show('setup');
+    openSetup();
     return;
   }
   hide('setup');
   $('soundChk').checked = S.sound;
-  show('start');
+  if (!S.camReady) show('start');
   connectRelay();
 }
 
-window.addEventListener('hashchange', () => { if (!S.camReady) boot(); });
+window.addEventListener('hashchange', () => { if (!S.camReady) { lastCmd = null; boot(); } });
+applyStaticTexts();
 loadMedia();
 boot();
 </script>

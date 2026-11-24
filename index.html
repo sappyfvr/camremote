@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cam Remote">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Cam Remote</title>
+<style>
+  :root {
+    --glass: rgba(28, 28, 30, .55);
+    --muted: rgba(255, 255, 255, .72);
+    --red: #ff3b30;
+    --green: #34c759;
+    --orange: #ff9f0a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none;
+    background: #000; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+  button:disabled { opacity: .4; }
+  svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+  #video.mirror { transform: scaleX(-1); }
+  #blink { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #blink.on { opacity: .85; transition: none; }
+
+  .glass { background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 999px; font-size: 15px; font-weight: 600; }
+  .round { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  #top {
+    position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  #relayPill { align-items: flex-start; border-radius: 18px; max-width: calc(100% - 64px); }
+  #relayPill .txt { display: flex; flex-direction: column; min-width: 0; }
+  #relaySub { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #8e8e93; flex: none; }
+  .dot.ok { background: var(--green); }
+  .dot.warn { background: var(--orange); }
+  #galleryBtn { position: relative; }
+  #badge {
+    position: absolute; top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 6px;
+    border-radius: 10px; background: var(--red); font-size: 12px; font-weight: 700;
+    display: none; align-items: center; justify-content: center;
+  }
+
+  #rec {
+    position: fixed; top: calc(env(safe-area-inset-top) + 74px); left: 50%; transform: translateX(-50%);
+    background: var(--red); display: none; font-variant-numeric: tabular-nums;
+  }
+  #count {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    font-size: 40vmin; font-weight: 700; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); pointer-events: none;
+  }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 190px); transform: translateX(-50%);
+    opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; max-width: 92vw;
+  }
+  #toast.on { opacity: 1; }
+
+  #bottom {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 30px 16px calc(env(safe-area-inset-bottom) + 18px);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    background: linear-gradient(to top, rgba(0, 0, 0, .6), transparent);
+  }
+  #modes { display: flex; padding: 3px; border-radius: 999px; }
+  #modes button { padding: 7px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  #modes button.sel { background: rgba(255, 255, 255, .92); color: #000; }
+  #row { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+  #left { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  #left .pill { padding: 7px 11px; font-size: 14px; }
+  #right { display: flex; justify-content: flex-end; }
+  #shutter { width: 82px; height: 82px; border-radius: 50%; border: 5px solid #fff; display: flex; align-items: center; justify-content: center; }
+  #shutter i { display: block; width: 64px; height: 64px; border-radius: 50%; background: #fff; transition: all .2s; }
+  #shutter.video i { background: var(--red); }
+  #shutter.recording i { width: 30px; height: 30px; border-radius: 7px; }
+  #shutter:active i { transform: scale(.9); }
+  .lit { color: #ffd60a; }
+
+  .overlay {
+    position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center;
+    padding: 20px; background: rgba(0, 0, 0, .85);
+  }
+  .overlay.show { display: flex; }
+  .card { width: 100%; max-width: 380px; padding: 24px; border-radius: 22px; background: #1c1c1e; text-align: center; }
+  .card h1 { margin: 6px 0 4px; font-size: 24px; }
+  .card h2 { margin: 0 0 4px; font-size: 20px; }
+  .card p { margin: 8px 0 16px; color: var(--muted); line-height: 1.45; font-size: 15px; }
+  .card .logo { width: 64px; height: 64px; border-radius: 15px; }
+  .primary { width: 100%; padding: 14px; border-radius: 14px; background: #fff; color: #000; font-weight: 700; font-size: 17px; }
+  .secondary { width: 100%; padding: 12px; border-radius: 14px; background: #2c2c2e; font-weight: 600; margin-top: 10px; }
+  .danger { color: var(--red); }
+  .error { color: #ff6961; font-size: 14px; margin: 12px 0 0; min-height: 1em; }
+  label.check { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 0 0 18px; color: var(--muted); font-size: 15px; }
+  label.check input { width: 20px; height: 20px; }
+  input[type=text] {
+    width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #3a3a3c;
+    background: #000; color: #fff; font-size: 16px; -webkit-user-select: text; user-select: text;
+  }
+  #gallery .card { max-height: 86vh; display: flex; flex-direction: column; }
+  #thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; overflow-y: auto; margin: 12px 0; }
+  #thumbs img, #thumbs video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: #000; }
+</style>
+</head>
+<body>
+<video id="video" playsinline muted autoplay></video>
+<div id="blink"></div>
+<div id="count"></div>
+
+<div id="top">
+  <div class="pill glass" id="relayPill">
+    <span class="dot" id="relayDot"></span>
+    <span class="txt"><span id="relayText">Verbinden…</span><span id="relaySub"></span></span>
+  </div>
+  <button class="round glass" id="galleryBtn" aria-label="Gemaakte foto's en video's">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+    <span id="badge"></span>
+  </button>
+</div>
+<div class="pill" id="rec">REC 0:00</div>
+<div class="pill glass" id="toast"></div>
+
+<div id="bottom">
+  <div id="modes" class="glass">
+    <button data-mode="photo" class="sel">Foto</button>
+    <button data-mode="video">Video</button>
+  </div>
+  <div id="row">
+    <div id="left">
+      <button class="pill glass" id="torchBtn" aria-label="Lamp">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="torchText">Uit</span>
+      </button>
+      <button class="pill glass" id="timerBtn" aria-label="Zelfontspanner">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span id="timerText">Uit</span>
+      </button>
+    </div>
+    <button id="shutter" aria-label="Foto maken"><i></i></button>
+    <div id="right">
+      <button class="round glass" id="flipBtn" aria-label="Wissel camera">
+        <svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 0 1 2-2h2l2-3h6l2 3h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15.5 12.5a3.5 3.5 0 0 0-6.2-2.2M8.5 13.5a3.5 3.5 0 0 0 6.2 2.2"/><path d="M9.5 8.5v2h2M14.5 17.5v-2h-2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- No personal code yet -->
+<div class="overlay" id="setup">
+  <div class="card">
+    <img class="logo" src="icon-180.png" alt="">
+    <h1>Cam Remote</h1>
+    <p>Deze pagina heeft je persoonlijke code nodig. Open de link uit de handleiding, of plak de code hieronder.</p>
+    <input type="text" id="topicInput" placeholder="cr-…" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <button class="primary" id="topicSave">Opslaan</button>
+    <div class="error" id="setupError"></div>
+  </div>
+</div>
+
+<!-- Needs one tap: browsers only start camera, sound and "screen stays on" after a tap -->
+<div class="overlay" id="start">
+  <div class="card">
+    <img class="logo" src="icon-180.png" alt="">
+    <h1>Cam Remote</h1>
+    <p>Zet je iPhone neer, tik op <b>Start camera</b> en bedien hem met je Garmin. Laat deze pagina open; het scherm blijft aan.</p>
+    <label class="check"><input type="checkbox" id="soundChk"> Geluid opnemen bij video</label>
+    <button class="primary" id="startBtn">Start camera</button>
+    <div class="error" id="startError"></div>
+  </div>
+</div>
+
+<div class="overlay" id="gallery">
+  <div class="card">
+    <h2 id="galleryTitle">Gemaakt</h2>
+    <p id="galleryHint">Tik op <b>Bewaar in Foto's</b> en kies daarna in het deelmenu <b>Bewaar</b>.</p>
+    <div id="thumbs"></div>
+    <button class="primary" id="saveBtn">Bewaar in Foto's</button>
+    <button class="secondary danger" id="clearBtn">Wis alles uit Cam Remote</button>
+    <button class="secondary" id="closeGallery">Sluit</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/*
+ * Cam Remote web page.
+ * The Garmin watch app publishes commands to an ntfy.sh topic (the personal code in the link).
+ * This page listens on that topic, runs the camera, and keeps photos/videos until you save them to Photos.
+ *
+ *   watch -> page:  "cmd=shutter&seq=7&sid=123&mode=photo&camera=back&flash=off&timer=3"   (topic <code>)
+ *   page -> watch:  "sid=123&ack=1&mode=photo&camera=back&flash=off&timer=0&rec=0&el=0&cam=1"  (topic <code>-s,
+ *                   only in reply to cmd=hello, to stay within ntfy.sh's free limits)
+ */
+
+const $ = (id) => document.getElementById(id);
+const RELAY = 'https://ntfy.sh/';
+const TOPIC_RE = /^[-_A-Za-z0-9]{8,60}$/;
+
+function store(key, value) { try { localStorage.setItem('camremote.' + key, value); } catch (e) { /* private mode */ } }
+function load(key) { try { return localStorage.getItem('camremote.' + key); } catch (e) { return null; } }
+
+const S = {
+  topic: null,
+  mode: 'photo',
+  facing: load('facing') === 'user' ? 'user' : 'environment',
+  torch: false,
+  timer: [0, 3, 10].includes(Number(load('timer'))) ? Number(load('timer')) : 0,
+  sound: load('sound') !== '0',
+  camReady: false,
+  videoTrack: null,
+  audioTrack: null,
+  torchSupported: false,
+  recorder: null,
+  recording: false,
+  recStart: 0,
+  countdown: 0,
+  countdownTimer: null,
+  seen: [],
+  media: [],
+};
+
+// ---------------------------------------------------------------- UI helpers
+
+function show(id) { $(id).classList.add('show'); }
+function hide(id) { $(id).classList.remove('show'); }
+
+let toastTimer = null;
+function toast(text, ms = 2200) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), ms);
+}
+
+function blink() {
+  const el = $('blink');
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 90);
+}
+
+let actx = null;
+function initAudio() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    actx.resume();
+  } catch (e) { actx = null; }
+}
+function beep(freq, seconds) {
+  if (!actx) return;
+  try {
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.18, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + seconds);
+    osc.connect(gain).connect(actx.destination);
+    osc.start();
+    osc.stop(actx.currentTime + seconds + 0.02);
+  } catch (e) { /* sound is optional */ }
+}
+
+function renderControls() {
+  document.querySelectorAll('#modes button').forEach((b) => {
+    b.classList.toggle('sel', b.dataset.mode === S.mode);
+    b.disabled = S.recording;
+  });
+  const sh = $('shutter');
+  sh.classList.toggle('video', S.mode === 'video');
+  sh.classList.toggle('recording', S.recording);
+  sh.setAttribute('aria-label', S.mode === 'photo' ? 'Foto maken' : (S.recording ? 'Stop opname' : 'Start opname'));
+  $('torchText').textContent = S.torch ? 'Aan' : 'Uit';
+  $('torchBtn').classList.toggle('lit', S.torch);
+  $('timerText').textContent = S.timer ? S.timer + 's' : 'Uit';
+  $('flipBtn').disabled = S.recording;
+  $('rec').style.display = S.recording ? 'inline-flex' : 'none';
+  $('video').classList.toggle('mirror', S.facing === 'user');
+}
+
+function renderBadge() {
+  const n = S.media.length;
+  $('badge').textContent = n > 99 ? '99+' : String(n);
+  $('badge').style.display = n ? 'flex' : 'none';
+}
+
+setInterval(() => {
+  if (!S.recording) return;
+  const s = Math.floor((Date.now() - S.recStart) / 1000);
+  $('rec').textContent = `REC ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}, 500);
+
+// ---------------------------------------------------------------- relay (ntfy.sh)
+
+let es = null;
+let relayOpen = false;
+let lastCmd = null;
+
+function renderRelay() {
+  $('relayDot').className = 'dot ' + (relayOpen ? 'ok' : 'warn');
+  $('relayText').textContent = relayOpen ? 'Klaar voor je horloge' : 'Verbinden…';
+  $('relaySub').textContent = lastCmd
+    ? `Laatste opdracht: ${lastCmd.label} · ${lastCmd.time}`
+    : 'Open Cam Remote op je horloge';
+}
+
+function connectRelay() {
+  if (es) es.close();
+  es = new EventSource(RELAY + encodeURIComponent(S.topic) + '/sse');
+  es.onopen = () => { relayOpen = true; renderRelay(); };
+  es.onerror = () => { relayOpen = false; renderRelay(); };   // the browser reconnects by itself
+  es.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch (err) { return; }
+    if (m && m.event === 'message' && typeof m.message === 'string') onCommand(m.message, m.time);
+  };
+}
+
+function publishStatus(sid, ack) {
+  const body = new URLSearchParams({
+    sid: sid || '', ack: ack || '',
+    mode: S.mode,
+    camera: S.facing === 'user' ? 'front' : 'back',
+    flash: S.torch ? 'on' : 'off',
+    timer: String(S.timer),
+    rec: S.recording ? '1' : '0',
+    el: S.recording ? String(Math.floor((Date.now() - S.recStart) / 1000)) : '0',
+    cam: S.camReady ? '1' : '0',
+  }).toString();
+  fetch(RELAY + encodeURIComponent(S.topic) + '-s', { method: 'POST', body, mode: 'no-cors', keepalive: true })
+    .catch(() => {});
+}
+
+function onCommand(text, time) {
+  const p = new URLSearchParams(text);
+  const cmd = p.get('cmd');
+  if (!cmd) return;
+  const key = p.get('sid') + ':' + p.get('seq');
+  if (S.seen.includes(key)) return;
+  S.seen.push(key);
+  if (S.seen.length > 100) S.seen.splice(0, 50);
+  if (time && Date.now() / 1000 - time > 30) return;   // too old, e.g. delivered after a long hiccup
+
+  const now = new Date();
+  lastCmd = {
+    label: { hello: 'verbinden', shutter: (p.get('mode') || S.mode) === 'video' ? 'video' : 'foto', set: 'instellingen' }[cmd] || cmd,
+    time: now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+  };
+  renderRelay();
+
+  if (cmd === 'hello') {
+    publishStatus(p.get('sid'), p.get('seq'));
+    return;
+  }
+  applySettings(p);
+  if (cmd === 'shutter') shutter();
+}
+
+// The watch sends its full settings with every command; the watch is in charge.
+function applySettings(p) {
+  const mode = p.get('mode');
+  if ((mode === 'photo' || mode === 'video') && !S.recording) setMode(mode);
+  const cam = p.get('camera');
+  if (cam === 'front' || cam === 'back') setFacing(cam === 'front' ? 'user' : 'environment');
+  const flash = p.get('flash');
+  if (flash === 'on' || flash === 'off') setTorch(flash === 'on');
+  const t = Number(p.get('timer'));
+  if ([0, 3, 10].includes(t)) setTimer(t);
+}
+
+// ---------------------------------------------------------------- camera
+
+function videoConstraints() {
+  return { facingMode: { ideal: S.facing }, width: { ideal: 3840 }, height: { ideal: 2160 } };
+}
+
+function attachVideo(track) {
+  S.videoTrack = track;
+  const v = $('video');
+  v.srcObject = new MediaStream([track]);
+  v.play().catch(() => {});
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  S.torchSupported = !!(caps && caps.torch);
+  applyTorch();
+  renderControls();
+}
+
+async function startCamera() {
+  initAudio();
+  S.sound = $('soundChk').checked;
+  store('sound', S.sound ? '1' : '0');
+  $('startError').textContent = '';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    $('startError').textContent = 'Deze browser kan de camera niet gebruiken. Open de pagina in Safari.';
+    return;
+  }
+  try {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: S.sound });
+    } catch (err) {
+      if (!S.sound || err.name !== 'NotAllowedError') throw err;
+      S.sound = false;   // microphone refused: carry on without sound
+      stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: false });
+    }
+    S.audioTrack = stream.getAudioTracks()[0] || null;
+    attachVideo(stream.getVideoTracks()[0]);
+    S.camReady = true;
+    hide('start');
+    requestWakeLock();
+    toast('Camera staat klaar');
+  } catch (err) {
+    $('startError').textContent = err && err.name === 'NotAllowedError'
+      ? 'Geen toegang tot de camera. Sta het toe via het aA-menu in de adresbalk → Website-instellingen.'
+      : 'De camera kon niet starten (' + (err && err.name || 'onbekend') + ').';
+  }
+}
+
+async function restartVideo() {
+  try {
+    if (S.videoTrack) S.videoTrack.stop();
+    const s = await navigator.mediaDevices.getUserMedia({ video: videoConstraints(), audio: false });
+    attachVideo(s.getVideoTracks()[0]);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function setFacing(facing) {
+  if (facing === S.facing || S.recording) return;
+  S.facing = facing;
+  store('facing', facing);
+  renderControls();
+  if (S.camReady && !(await restartVideo())) toast('Wisselen van camera mislukt');
+}
+
+function setMode(mode) {
+  if (S.recording || mode === S.mode) return;
+  cancelCountdown();
+  S.mode = mode;
+  renderControls();
+}
+
+function setTimer(seconds) {
+  S.timer = seconds;
+  store('timer', String(seconds));
+  renderControls();
+}
+
+function setTorch(on) {
+  S.torch = on;
+  applyTorch();
+  renderControls();
+}
+
+async function applyTorch() {
+  if (!S.videoTrack || !S.torchSupported) return;
+  try { await S.videoTrack.applyConstraints({ advanced: [{ torch: S.torch }] }); } catch (e) { /* not supported */ }
+}
+
+// ---------------------------------------------------------------- capture
+
+function shutter() {
+  initAudio();
+  if (S.countdownTimer) {
+    cancelCountdown();
+    toast('Afgebroken');
+    return;
+  }
+  if (S.mode === 'video' && S.recording) {
+    stopRecording();
+    return;
+  }
+  if (!S.camReady) {
+    toast('Tik eerst op Start camera');
+    return;
+  }
+  if (S.timer > 0) startCountdown();
+  else fire();
+}
+
+function fire() {
+  if (S.mode === 'video') startRecording();
+  else takePhoto();
+}
+
+function startCountdown() {
+  S.countdown = S.timer;
+  const el = $('count');
+  el.textContent = S.countdown;
+  el.style.display = 'flex';
+  beep(660, 0.08);
+  S.countdownTimer = setInterval(() => {
+    S.countdown -= 1;
+    if (S.countdown <= 0) {
+      cancelCountdown();
+      fire();
+    } else {
+      el.textContent = S.countdown;
+      beep(660, 0.08);
+    }
+  }, 1000);
+}
+
+function cancelCountdown() {
+  if (S.countdownTimer) clearInterval(S.countdownTimer);
+  S.countdownTimer = null;
+  S.countdown = 0;
+  $('count').style.display = 'none';
+}
+
+function takePhoto() {
+  const v = $('video');
+  const w = v.videoWidth;
+  const h = v.videoHeight;
+  if (!w || !h) {
+    toast('Camera is nog niet klaar');
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(v, 0, 0, w, h);
+  blink();
+  beep(1800, 0.05);
+  canvas.toBlob((blob) => {
+    if (blob) addMedia(blob, 'jpg');
+    else toast('Foto mislukt');
+  }, 'image/jpeg', 0.92);
+}
+
+async function ensureAudio() {
+  if (!S.sound) return;
+  if (S.audioTrack && S.audioTrack.readyState === 'live') return;
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    S.audioTrack = s.getAudioTracks()[0] || null;
+  } catch (e) {
+    S.audioTrack = null;
+  }
+}
+
+async function startRecording() {
+  if (!window.MediaRecorder) {
+    toast('Video wordt hier niet ondersteund');
+    return;
+  }
+  await ensureAudio();
+  const tracks = [S.videoTrack];
+  if (S.sound && S.audioTrack && S.audioTrack.readyState === 'live') tracks.push(S.audioTrack);
+  const types = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
+  const type = types.find((t) => MediaRecorder.isTypeSupported(t));
+  let rec;
+  try {
+    rec = new MediaRecorder(new MediaStream(tracks), type ? { mimeType: type } : undefined);
+  } catch (e) {
+    toast('Video starten mislukt');
+    return;
+  }
+  const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    const mime = rec.mimeType || type || 'video/mp4';
+    addMedia(new Blob(chunks, { type: mime }), mime.includes('webm') ? 'webm' : 'mp4');
+  };
+  rec.start(1000);
+  S.recorder = rec;
+  S.recording = true;
+  S.recStart = Date.now();
+  $('rec').textContent = 'REC 0:00';
+  beep(880, 0.15);
+  renderControls();
+}
+
+function stopRecording() {
+  if (S.recorder && S.recorder.state !== 'inactive') S.recorder.stop();
+  S.recorder = null;
+  S.recording = false;
+  beep(440, 0.15);
+  renderControls();
+}
+
+// ---------------------------------------------------------------- storage (survives a reload)
+
+let dbPromise = null;
+function idb() {
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open('camremote', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('media', { keyPath: 'id', autoIncrement: true });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  return dbPromise;
+}
+
+async function idbRun(mode, fn) {
+  const db = await idb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('media', mode);
+    const req = fn(tx.objectStore('media'));
+    tx.oncomplete = () => resolve(req ? req.result : undefined);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function addMedia(blob, ext) {
+  const item = { created: Date.now(), type: blob.type, ext, blob };
+  try {
+    item.id = await idbRun('readwrite', (st) => st.add({ created: item.created, type: item.type, ext, blob }));
+  } catch (e) {
+    item.id = null;   // kept in memory only
+  }
+  S.media.push(item);
+  renderBadge();
+  toast(ext === 'jpg' ? `Foto gemaakt (${S.media.length})` : `Video gemaakt (${S.media.length})`);
+}
+
+async function loadMedia() {
+  try {
+    const all = await idbRun('readonly', (st) => st.getAll());
+    S.media = (all || []).filter((m) => m && m.blob);
+  } catch (e) {
+    S.media = [];
+  }
+  renderBadge();
+}
+
+async function clearMedia() {
+  try { await idbRun('readwrite', (st) => st.clear()); } catch (e) { /* ignore */ }
+  S.media = [];
+  renderBadge();
+}
+
+// ---------------------------------------------------------------- gallery & saving to Photos
+
+let thumbUrls = [];
+
+function fileName(m) {
+  const d = new Date(m.created);
+  const p = (n) => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  return `${m.ext === 'jpg' ? 'IMG' : 'VID'}_${stamp}_${m.created % 1000}.${m.ext}`;
+}
+
+function openGallery() {
+  thumbUrls.forEach((u) => URL.revokeObjectURL(u));
+  thumbUrls = [];
+  const box = $('thumbs');
+  box.textContent = '';
+  S.media.slice(-60).reverse().forEach((m) => {
+    const url = URL.createObjectURL(m.blob);
+    thumbUrls.push(url);
+    const isVideo = (m.type || '').startsWith('video');
+    const el = document.createElement(isVideo ? 'video' : 'img');
+    el.src = url;
+    if (isVideo) { el.muted = true; el.playsInline = true; el.preload = 'metadata'; }
+    box.appendChild(el);
+  });
+  const n = S.media.length;
+  $('galleryTitle').textContent = n ? (n === 1 ? '1 opname' : `${n} opnames`) : 'Nog niets gemaakt';
+  $('galleryHint').style.display = n ? '' : 'none';
+  $('saveBtn').disabled = !n;
+  $('clearBtn').disabled = !n;
+  show('gallery');
+}
+
+async function saveAll() {
+  const files = S.media.map((m) => new File([m.blob], fileName(m), {
+    type: m.type || (m.ext === 'jpg' ? 'image/jpeg' : 'video/mp4'),
+  }));
+  if (!files.length) return;
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try {
+      await navigator.share({ files });
+      if (confirm('Staan ze nu in Foto\'s? Dan kun je ze hier wissen om ruimte vrij te maken. Nu wissen?')) {
+        await clearMedia();
+        openGallery();
+      }
+    } catch (err) {
+      if (err && err.name !== 'AbortError') toast('Delen mislukt: ' + err.name);
+    }
+  } else {
+    // Desktop browsers: download the files instead.
+    files.forEach((f) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(f);
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+}
+
+// ---------------------------------------------------------------- keep the screen on
+
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+  } catch (e) { wakeLock = null; }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') return;
+  if (S.topic && (!es || es.readyState === EventSource.CLOSED)) connectRelay();
+  if (S.camReady) {
+    requestWakeLock();
+    if (!S.videoTrack || S.videoTrack.readyState === 'ended') {
+      if (!(await restartVideo())) {
+        S.camReady = false;
+        show('start');
+      }
+    }
+  }
+});
+
+// ---------------------------------------------------------------- wiring
+
+function readTopic() {
+  const fromHash = decodeURIComponent(location.hash.replace(/^#(k=)?/, ''));
+  if (TOPIC_RE.test(fromHash)) { store('topic', fromHash); return fromHash; }
+  const fromQuery = new URLSearchParams(location.search).get('k');
+  if (fromQuery && TOPIC_RE.test(fromQuery)) { store('topic', fromQuery); return fromQuery; }
+  const saved = load('topic');
+  return saved && TOPIC_RE.test(saved) ? saved : null;
+}
+
+$('shutter').addEventListener('click', shutter);
+$('modes').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) setMode(b.dataset.mode);
+});
+$('torchBtn').addEventListener('click', () => {
+  if (S.camReady && !S.torchSupported) toast('De lamp is niet te bedienen vanuit Safari');
+  setTorch(!S.torch);
+});
+$('timerBtn').addEventListener('click', () => setTimer(S.timer === 0 ? 3 : (S.timer === 3 ? 10 : 0)));
+$('flipBtn').addEventListener('click', () => setFacing(S.facing === 'user' ? 'environment' : 'user'));
+$('galleryBtn').addEventListener('click', openGallery);
+$('closeGallery').addEventListener('click', () => hide('gallery'));
+$('saveBtn').addEventListener('click', saveAll);
+$('clearBtn').addEventListener('click', async () => {
+  if (confirm('Alle foto\'s en video\'s uit Cam Remote wissen? Wat je al in Foto\'s hebt bewaard, blijft staan.')) {
+    await clearMedia();
+    openGallery();
+  }
+});
+$('startBtn').addEventListener('click', startCamera);
+$('topicSave').addEventListener('click', () => {
+  const value = $('topicInput').value.trim().replace(/^.*#(k=)?/, '');
+  if (!TOPIC_RE.test(value)) {
+    $('setupError').textContent = 'Dat lijkt geen geldige code.';
+    return;
+  }
+  store('topic', value);
+  location.hash = value;
+  boot();
+});
+
+function boot() {
+  S.topic = readTopic();
+  renderControls();
+  renderRelay();
+  if (!S.topic) {
+    show('setup');
+    return;
+  }
+  hide('setup');
+  $('soundChk').checked = S.sound;
+  show('start');
+  connectRelay();
+}
+
+window.addEventListener('hashchange', () => { if (!S.camReady) boot(); });
+loadMedia();
+boot();
+</script>
+</body>
+</html>

@@ -70,6 +70,7 @@
     opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; max-width: 92vw;
   }
   #toast.on { opacity: 1; }
+  body.hasZoom #toast { bottom: calc(env(safe-area-inset-bottom) + 248px); }
 
   #bottom {
     position: fixed; left: 0; right: 0; bottom: 0;
@@ -80,6 +81,11 @@
   #modes { display: flex; padding: 3px; border-radius: 999px; }
   #modes button { padding: 7px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
   #modes button.sel { background: rgba(255, 255, 255, .92); color: #000; }
+  /* zoom: one button per rear lens (0.5x, 1x, Tele); only shown when the iPhone offers more than one */
+  #zoom { display: none; gap: 2px; padding: 3px; border-radius: 999px; }
+  #zoom.show { display: flex; }
+  #zoom button { min-width: 46px; height: 36px; padding: 0 11px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--muted); }
+  #zoom button.sel { background: rgba(255, 255, 255, .92); color: #000; }
   #row { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
   #left { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
   #left .pill { padding: 7px 11px; font-size: 14px; }
@@ -118,6 +124,8 @@
   .seg button { flex: 1; padding: 10px 0; border-radius: 9px; font-size: 15px; font-weight: 600; color: var(--muted); }
   .seg button.sel { background: #fff; color: #000; }
   .field .note { font-size: 13px; color: var(--orange); margin-top: 7px; line-height: 1.35; }
+  .field .info { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .field .info + .info { margin-top: 5px; opacity: .75; }
   #thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; overflow-y: auto; margin: 12px 0; }
   #thumbs img, #thumbs video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: #000; }
 </style>
@@ -146,6 +154,7 @@
 <div class="pill glass" id="toast"></div>
 
 <div id="bottom">
+  <div id="zoom" class="glass" role="group" data-i18n-aria="ariaZoom"></div>
   <div id="modes" class="glass">
     <button data-mode="photo" class="sel" data-i18n="photo"></button>
     <button data-mode="video" data-i18n="video"></button>
@@ -213,6 +222,7 @@
     <div class="field"><div class="label" data-i18n="setTimer"></div><div class="seg" id="segTimer"></div></div>
     <div class="field"><div class="label" data-i18n="setCamera"></div><div class="seg" id="segFacing"></div></div>
     <div class="field"><div class="label" data-i18n="setTorch"></div><div class="seg" id="segTorch"></div><div class="note" id="torchNote"></div></div>
+    <div class="field"><div class="label" data-i18n="setZoom"></div><div class="info" id="zoomInfo"></div><div class="info" id="zoomCams"></div></div>
     <div class="field"><div class="note" id="watchNote"></div></div>
     <button class="primary" id="closeSettings" data-i18n="done"></button>
   </div>
@@ -226,9 +236,12 @@
  * The Garmin watch app publishes commands to an ntfy.sh topic (the personal code in the link).
  * This page listens on that topic, runs the camera, and keeps photos/videos until you save them to Photos.
  *
- *   watch -> page:  "cmd=shutter&seq=7&sid=123&mode=photo&camera=back&flash=off&timer=3"   (topic <code>)
- *   page -> watch:  "sid=123&ack=1&mode=photo&camera=back&flash=off&timer=0&rec=0&el=0&cam=1"  (topic <code>-s,
- *                   only in reply to cmd=hello, to stay within ntfy.sh's free limits)
+ *   watch -> page:  "cmd=shutter&seq=7&sid=123&mode=photo&camera=back&flash=off&timer=3&zoom=w"   (topic <code>)
+ *   page -> watch:  "sid=123&ack=1&mode=photo&camera=back&flash=off&timer=0&rec=0&el=0&cam=1&zl=uwt&zoom=w"
+ *                   (topic <code>-s, only in reply to cmd=hello, to stay within ntfy.sh's free limits)
+ *
+ *   zoom = which rear lens: u = ultra wide (0.5x), w = the normal camera (1x), t = telephoto.
+ *   zl   = the lenses this iPhone offers, e.g. "uwt"; "" when there is nothing to choose.
  */
 
 const $ = (id) => document.getElementById(id);
@@ -236,6 +249,7 @@ const RELAY = 'https://ntfy.sh/';
 const TOPIC_RE = /^[-_A-Za-z0-9]{8,60}$/;
 const TIMER_OPTIONS = [0, 3, 5, 10, 20, 30];   // self-timer choices on the phone; the watch may send 0..60
 const validTimer = (t) => Number.isInteger(t) && t >= 0 && t <= 60;
+const ZOOM_ORDER = ['u', 'w', 't'];   // rear lenses: ultra wide (0.5x), the normal camera (1x), telephoto
 
 // ---------------------------------------------------------------- languages
 // The page follows the iPhone's language; ?lang=de forces one. Menu names in setupText match the watch app.
@@ -259,6 +273,10 @@ const I18N = {
     cancelled: 'Cancelled', tapStartFirst: 'Tap Start camera first', camNotReady: 'Camera is not ready yet', photoFailed: 'Photo failed',
     videoUnsupported: 'Video is not supported here', videoFailed: 'Could not start video',
     photoTaken: 'Photo taken ({n})', videoTaken: 'Video saved ({n})', torchUnsupported: 'The light can’t be controlled from Safari',
+    ariaZoom: 'Zoom', zoomTele: 'Tele', zoomFailed: 'That lens is not available', setZoom: 'Zoom lenses',
+    zoomFound: 'Available: {list}. Choose one above the Photo/Video switch, or on the watch.',
+    zoomNone: 'Safari offers no extra rear lens on this iPhone.',
+    zoomLater: 'Start the camera first; then this shows which lenses your iPhone offers.', zoomCams: 'Cameras: {list}',
     galleryEmpty: 'Nothing taken yet', galleryOne: '1 item', galleryMany: '{n} items',
     galleryHint: 'Tap <b>Save to Photos</b>, then choose <b>Save</b> in the share menu.',
     saveToPhotos: 'Save to Photos', clearAll: 'Delete all from Cam Remote', close: 'Close',
@@ -288,6 +306,10 @@ const I18N = {
     cancelled: 'Afgebroken', tapStartFirst: 'Tik eerst op Start camera', camNotReady: 'Camera is nog niet klaar', photoFailed: 'Foto mislukt',
     videoUnsupported: 'Video wordt hier niet ondersteund', videoFailed: 'Video starten mislukt',
     photoTaken: 'Foto gemaakt ({n})', videoTaken: 'Video gemaakt ({n})', torchUnsupported: 'De lamp is niet te bedienen vanuit Safari',
+    ariaZoom: 'Zoom', zoomTele: 'Tele', zoomFailed: 'Die lens is niet beschikbaar', setZoom: 'Zoomlenzen',
+    zoomFound: 'Beschikbaar: {list}. Kies er een boven de knop Foto/Video, of op het horloge.',
+    zoomNone: 'Safari biedt op deze iPhone geen extra lens aan de achterkant.',
+    zoomLater: 'Start eerst de camera; daarna zie je hier welke lenzen je iPhone biedt.', zoomCams: 'Camera’s: {list}',
     galleryEmpty: 'Nog niets gemaakt', galleryOne: '1 opname', galleryMany: '{n} opnames',
     galleryHint: 'Tik op <b>Bewaar in Foto’s</b> en kies daarna in het deelmenu <b>Bewaar</b>.',
     saveToPhotos: 'Bewaar in Foto’s', clearAll: 'Wis alles uit Cam Remote', close: 'Sluit',
@@ -317,6 +339,10 @@ const I18N = {
     cancelled: 'Abgebrochen', tapStartFirst: 'Tippe zuerst auf Kamera starten', camNotReady: 'Kamera ist noch nicht bereit', photoFailed: 'Foto fehlgeschlagen',
     videoUnsupported: 'Video wird hier nicht unterstützt', videoFailed: 'Video konnte nicht starten',
     photoTaken: 'Foto aufgenommen ({n})', videoTaken: 'Video aufgenommen ({n})', torchUnsupported: 'Das Licht lässt sich in Safari nicht steuern',
+    ariaZoom: 'Zoom', zoomTele: 'Tele', zoomFailed: 'Dieses Objektiv ist nicht verfügbar', setZoom: 'Zoom-Objektive',
+    zoomFound: 'Verfügbar: {list}. Wähle eines über dem Schalter Foto/Video oder auf der Uhr.',
+    zoomNone: 'Safari bietet auf diesem iPhone kein weiteres rückseitiges Objektiv an.',
+    zoomLater: 'Starte zuerst die Kamera; dann steht hier, welche Objektive dein iPhone bietet.', zoomCams: 'Kameras: {list}',
     galleryEmpty: 'Noch nichts aufgenommen', galleryOne: '1 Aufnahme', galleryMany: '{n} Aufnahmen',
     galleryHint: 'Tippe auf <b>In Fotos sichern</b> und wähle dann im Teilen-Menü <b>Sichern</b>.',
     saveToPhotos: 'In Fotos sichern', clearAll: 'Alles aus Cam Remote löschen', close: 'Schließen',
@@ -346,6 +372,10 @@ const I18N = {
     cancelled: 'Annulé', tapStartFirst: 'Touchez d’abord Démarrer la caméra', camNotReady: 'La caméra n’est pas encore prête', photoFailed: 'Échec de la photo',
     videoUnsupported: 'La vidéo n’est pas prise en charge ici', videoFailed: 'Impossible de démarrer la vidéo',
     photoTaken: 'Photo prise ({n})', videoTaken: 'Vidéo enregistrée ({n})', torchUnsupported: 'La lampe ne peut pas être contrôlée depuis Safari',
+    ariaZoom: 'Zoom', zoomTele: 'Télé', zoomFailed: 'Cet objectif n’est pas disponible', setZoom: 'Objectifs de zoom',
+    zoomFound: 'Disponibles : {list}. Choisissez-en un au-dessus du sélecteur Photo/Vidéo ou sur la montre.',
+    zoomNone: 'Safari ne propose aucun autre objectif arrière sur cet iPhone.',
+    zoomLater: 'Démarrez d’abord l’appareil photo ; les objectifs proposés par votre iPhone s’afficheront ici.', zoomCams: 'Caméras : {list}',
     galleryEmpty: 'Rien pour l’instant', galleryOne: '1 prise', galleryMany: '{n} prises',
     galleryHint: 'Touchez <b>Enregistrer dans Photos</b>, puis choisissez <b>Enregistrer</b> dans le menu de partage.',
     saveToPhotos: 'Enregistrer dans Photos', clearAll: 'Tout supprimer de Cam Remote', close: 'Fermer',
@@ -375,6 +405,10 @@ const I18N = {
     cancelled: 'Cancelado', tapStartFirst: 'Toca primero Iniciar cámara', camNotReady: 'La cámara aún no está lista', photoFailed: 'Error al hacer la foto',
     videoUnsupported: 'El vídeo no es compatible aquí', videoFailed: 'No se pudo iniciar el vídeo',
     photoTaken: 'Foto hecha ({n})', videoTaken: 'Vídeo grabado ({n})', torchUnsupported: 'La luz no se puede controlar desde Safari',
+    ariaZoom: 'Zoom', zoomTele: 'Tele', zoomFailed: 'Esa lente no está disponible', setZoom: 'Lentes de zoom',
+    zoomFound: 'Disponibles: {list}. Elige una encima del selector Foto/Vídeo o en el reloj.',
+    zoomNone: 'Safari no ofrece ninguna otra lente trasera en este iPhone.',
+    zoomLater: 'Inicia primero la cámara; aquí verás qué lentes ofrece tu iPhone.', zoomCams: 'Cámaras: {list}',
     galleryEmpty: 'Aún no hay nada', galleryOne: '1 toma', galleryMany: '{n} tomas',
     galleryHint: 'Toca <b>Guardar en Fotos</b> y elige <b>Guardar</b> en el menú de compartir.',
     saveToPhotos: 'Guardar en Fotos', clearAll: 'Borrar todo de Cam Remote', close: 'Cerrar',
@@ -404,6 +438,10 @@ const I18N = {
     cancelled: 'Annullato', tapStartFirst: 'Tocca prima Avvia fotocamera', camNotReady: 'La fotocamera non è ancora pronta', photoFailed: 'Foto non riuscita',
     videoUnsupported: 'Video non supportato qui', videoFailed: 'Impossibile avviare il video',
     photoTaken: 'Foto scattata ({n})', videoTaken: 'Video registrato ({n})', torchUnsupported: 'La luce non si può controllare da Safari',
+    ariaZoom: 'Zoom', zoomTele: 'Tele', zoomFailed: 'Questo obiettivo non è disponibile', setZoom: 'Obiettivi zoom',
+    zoomFound: 'Disponibili: {list}. Scegline uno sopra il selettore Foto/Video o sull’orologio.',
+    zoomNone: 'Safari non offre altri obiettivi posteriori su questo iPhone.',
+    zoomLater: 'Avvia prima la fotocamera; qui vedrai quali obiettivi offre il tuo iPhone.', zoomCams: 'Fotocamere: {list}',
     galleryEmpty: 'Ancora niente', galleryOne: '1 scatto', galleryMany: '{n} scatti',
     galleryHint: 'Tocca <b>Salva in Foto</b> e scegli <b>Salva</b> nel menu di condivisione.',
     saveToPhotos: 'Salva in Foto', clearAll: 'Elimina tutto da Cam Remote', close: 'Chiudi',
@@ -469,8 +507,13 @@ const S = {
   videoTrack: null,
   audioTrack: null,
   torchSupported: false,
+  zoom: 'w',         // which rear lens: 'u' | 'w' | 't' (see ZOOM_ORDER)
+  lenses: {},        // the extra rear lenses Safari offers: { u: deviceId, t: deviceId }
+  camNames: [],      // the camera names Safari reported (shown on the settings screen)
+  lensLost: false,   // a lens could not be opened and was dropped
+  live: null,        // cameraKey() of the camera that is running now
   watchDefaults: null,   // which defaults the watch itself sets (from Garmin Connect), once it has said hello
-  switching: null,   // promise while the lens is being switched
+  switching: null,   // promise while the camera or lens is being switched
   recorder: null,
   recording: false,
   recStart: 0,
@@ -536,6 +579,41 @@ function renderControls() {
   $('flipBtn').disabled = S.recording;
   $('rec').style.display = S.recording ? 'inline-flex' : 'none';
   $('video').classList.toggle('mirror', S.facing === 'user');
+  renderZoom();
+}
+
+// The rear lenses there are to choose from, in order. Fewer than two means: no zoom.
+function zoomChoices() {
+  const list = ZOOM_ORDER.filter((z) => z === 'w' || S.lenses[z]);
+  return list.length > 1 ? list : [];
+}
+
+function zoomLabel(z) {
+  if (z === 'u') return (0.5).toLocaleString(LANG) + '×';
+  return z === 'w' ? '1×' : t('zoomTele');
+}
+
+function renderZoom() {
+  const box = $('zoom');
+  const list = S.facing === 'environment' ? zoomChoices() : [];
+  const key = LANG + list.join('');
+  if (box.dataset.list !== key) {
+    box.dataset.list = key;
+    box.textContent = '';
+    list.forEach((z) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.zoom = z;
+      b.textContent = zoomLabel(z);
+      box.appendChild(b);
+    });
+  }
+  box.querySelectorAll('button').forEach((b) => {
+    b.classList.toggle('sel', b.dataset.zoom === S.zoom);
+    b.disabled = S.recording;
+  });
+  box.classList.toggle('show', list.length > 0);
+  document.body.classList.toggle('hasZoom', list.length > 0);
 }
 
 function renderBadge() {
@@ -586,6 +664,8 @@ function publishStatus(sid, ack) {
     rec: S.recording ? '1' : '0',
     el: S.recording ? String(Math.floor((Date.now() - S.recStart) / 1000)) : '0',
     cam: S.camReady ? '1' : '0',
+    zl: zoomChoices().join(''),
+    zoom: S.zoom,
   }).toString();
   fetch(RELAY + encodeURIComponent(S.topic) + '-s', { method: 'POST', body, mode: 'no-cors', keepalive: true })
     .catch(() => {});
@@ -624,6 +704,8 @@ function applySettings(p) {
   if ((mode === 'photo' || mode === 'video') && !S.recording) setMode(mode);
   const cam = p.get('camera');
   if (cam === 'front' || cam === 'back') setFacing(cam === 'front' ? 'user' : 'environment');
+  const zoom = p.get('zoom');
+  if (zoom) setZoom(zoom);
   const flash = p.get('flash');
   if (flash === 'on' || flash === 'off') setTorch(flash === 'on');
   const t = p.get('timer');
@@ -635,15 +717,78 @@ function applySettings(p) {
 // Ask for the wanted camera strictly ("exact"). With only a preference, Safari may keep the rear camera
 // when switching to selfie, because the rear camera matches the 4K wish better than the selfie camera.
 // Devices that can't tell which way a camera faces (desktop webcams) get the preference instead.
+const VIDEO_SIZE = { width: { ideal: 3840 }, height: { ideal: 2160 } };
+
 function videoConstraints(strict) {
-  return {
-    facingMode: strict ? { exact: S.facing } : { ideal: S.facing },
-    width: { ideal: 3840 },
-    height: { ideal: 2160 },
-  };
+  return Object.assign({ facingMode: strict ? { exact: S.facing } : { ideal: S.facing } }, VIDEO_SIZE);
+}
+
+// ---- zoom = another rear lens
+//
+// A page cannot count on a zoom setting in Safari, but Safari lists every rear lens as a camera of
+// its own. So "zoom" here means opening the ultra wide (0.5x) or the telephoto lens instead of the
+// normal camera: real optical zoom, as far as the iPhone has those lenses.
+// Safari only tells them apart by name, in the iPhone's language. "ultra" and "tele" are part of those
+// names in the languages this page supports; if no name matches there are simply no zoom buttons.
+
+const plainName = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const FRONT_NAME = /front|vorder|voorzijde|voorkant|avant|frontal|anterior|facetime|truedepth|selfie/;
+const COMBO_NAME = /dual|doppel|dubbel|double|doble|doppi|tripl|tripel|drievoudig|dreifach|zweifach/;   // several lenses in one
+
+// Looks up the extra rear lenses. Names are only filled in once the camera has been allowed.
+async function findLenses() {
+  S.lenses = {};
+  S.camNames = [];
+  try {
+    const list = await Promise.race([
+      navigator.mediaDevices.enumerateDevices(),
+      new Promise((resolve) => setTimeout(() => resolve([]), 1500)),
+    ]);
+    list.filter((d) => d.kind === 'videoinput' && d.deviceId && d.label).forEach((d) => {
+      S.camNames.push(d.label);
+      const name = plainName(d.label);
+      if (FRONT_NAME.test(name) || COMBO_NAME.test(name)) return;
+      if (name.includes('ultra')) {
+        if (!S.lenses.u) S.lenses.u = d.deviceId;
+      } else if (name.includes('tele')) {
+        if (!S.lenses.t) S.lenses.t = d.deviceId;
+      }
+    });
+  } catch (e) { /* no list: no zoom */ }
+  if (S.zoom !== 'w' && !S.lenses[S.zoom]) S.zoom = 'w';
+}
+
+// Which camera should be running: selfie, or the rear camera with the chosen lens.
+function cameraKey() {
+  return S.facing === 'environment' ? 'environment:' + S.zoom : S.facing;
+}
+
+// The lens to open for the chosen zoom: the id of the ultra wide or telephoto camera,
+// or null for the normal camera (1x, and always for selfie).
+function wantedLens() {
+  return (S.facing === 'environment' && S.zoom !== 'w' && S.lenses[S.zoom]) || null;
+}
+
+// A lens that can't be opened is not offered again; the camera goes back to 1x.
+function forgetLens() {
+  delete S.lenses[S.zoom];
+  S.zoom = 'w';
+  S.lensLost = true;
 }
 
 async function getCameraStream(withAudio) {
+  const lens = wantedLens();
+  if (lens) {
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ deviceId: { exact: lens } }, VIDEO_SIZE), audio: withAudio });
+      const track = s.getVideoTracks()[0];
+      if (!track.getSettings || track.getSettings().facingMode !== 'user') return s;
+      s.getTracks().forEach((tr) => tr.stop());   // its name misled us: this is a selfie camera
+    } catch (err) {
+      if (err.name !== 'OverconstrainedError' && err.name !== 'NotFoundError') throw err;
+    }
+    forgetLens();   // and carry on with the normal camera
+  }
   try {
     return await navigator.mediaDevices.getUserMedia({ video: videoConstraints(true), audio: withAudio });
   } catch (err) {
@@ -662,6 +807,7 @@ function attachVideo(track) {
   v.play().catch(() => {});
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   S.torchSupported = !!(caps && caps.torch);
+  S.live = cameraKey();
   applyTorch();
   renderControls();
 }
@@ -686,7 +832,9 @@ async function startCamera() {
     }
     S.audioTrack = stream.getAudioTracks()[0] || null;
     attachVideo(stream.getVideoTracks()[0]);
+    await findLenses();   // now that the camera is allowed, Safari names the lenses
     S.camReady = true;
+    renderControls();
     hide('start');
     requestWakeLock();
     toast(t('camReady'));
@@ -697,29 +845,67 @@ async function startCamera() {
   }
 }
 
+// Resolves once the video shows the newly opened camera (the picture has a size), or after 3 seconds.
+// Without this wait, a photo taken right after a camera or lens switch finds no picture yet.
+function videoReady() {
+  const v = $('video');
+  const started = Date.now();
+  return new Promise((resolve) => {
+    (function check() {
+      if ((v.videoWidth && v.readyState >= 2) || Date.now() - started > 3000) resolve();
+      else setTimeout(check, 50);
+    })();
+  });
+}
+
 async function restartVideo() {
   if (S.videoTrack) S.videoTrack.stop();
-  for (let attempt = 0; attempt < 2; attempt++) {
+  S.live = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const s = await getCameraStream(false);
       attachVideo(s.getVideoTracks()[0]);
+      await videoReady();
       return true;
     } catch (err) {
+      if (attempt === 1 && wantedLens()) forgetLens();   // the lens keeps failing: last try with the normal camera
       await new Promise((r) => setTimeout(r, 400));   // iOS sometimes needs a moment to release the previous lens
     }
   }
   return false;
 }
 
-async function setFacing(facing) {
+// Camera changes (selfie/rear, another lens) run one at a time. Each run opens what is wanted by
+// then, so a command that changes both the camera and the lens restarts the camera only once.
+function syncCamera() {
+  if (!S.camReady) return;
+  const run = async () => {
+    if (S.live === cameraKey()) return;
+    const ok = await restartVideo();
+    if (!ok) toast(t('flipFailed'));
+    else if (S.lensLost) toast(t('zoomFailed'));
+    S.lensLost = false;
+    renderControls();
+  };
+  const p = (S.switching || Promise.resolve()).then(run, run);
+  S.switching = p;
+  p.then(() => { if (S.switching === p) S.switching = null; });
+}
+
+function setFacing(facing) {
   if (facing === S.facing || S.recording) return;
   S.facing = facing;
   renderControls();
-  if (!S.camReady) return;
-  S.switching = restartVideo();
-  const ok = await S.switching;
-  S.switching = null;
-  if (!ok) toast(t('flipFailed'));
+  syncCamera();
+}
+
+// Chooses the rear lens. On selfie it is only remembered, for when the rear camera comes back.
+function setZoom(zoom) {
+  if (zoom === S.zoom || S.recording || !ZOOM_ORDER.includes(zoom)) return;
+  if (zoom !== 'w' && !S.lenses[zoom]) return;   // this iPhone does not have that lens
+  S.zoom = zoom;
+  renderControls();
+  syncCamera();
 }
 
 function setMode(mode) {
@@ -740,6 +926,7 @@ function applyDefaults() {
   if (S.recording || S.countdownTimer) return;
   setTimer(D.timer);
   setTorch(D.torch);
+  setZoom('w');
   setFacing(D.facing);
 }
 
@@ -794,6 +981,11 @@ function renderSettings() {
   $('torchNote').textContent = (D.torch && S.camReady && !S.torchSupported) ? t('torchUnsupported') : '';
   const w = S.watchDefaults;
   $('watchNote').textContent = (w && (w.timer || w.facing || w.torch)) ? t('watchRules') : '';
+  // Zoom: which lenses were found, plus the camera names Safari gave (they explain a missing lens).
+  const lenses = zoomChoices();
+  $('zoomInfo').textContent = !S.camReady ? t('zoomLater')
+    : (lenses.length ? t('zoomFound', { list: lenses.map(zoomLabel).join(', ') }) : t('zoomNone'));
+  $('zoomCams').textContent = S.camNames.length ? t('zoomCams', { list: S.camNames.join(', ') }) : '';
 }
 
 function openSettings() {
@@ -1140,6 +1332,10 @@ $('timerBtn').addEventListener('click', () => {
   setTimer(TIMER_OPTIONS[(i + 1) % TIMER_OPTIONS.length]);
 });
 $('flipBtn').addEventListener('click', () => setFacing(S.facing === 'user' ? 'environment' : 'user'));
+$('zoom').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (b) setZoom(b.dataset.zoom);
+});
 $('galleryBtn').addEventListener('click', openGallery);
 $('settingsBtn').addEventListener('click', openSettings);
 $('startSettings').addEventListener('click', openSettings);

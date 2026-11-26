@@ -36,8 +36,11 @@ Lost your code? On the watch: menu → **Pairing code**. On the page: tap the st
 | Take a photo / start or stop a video / cancel the self-timer | **START** | tap the shutter button in the middle |
 | Switch lens (back ↔ selfie) | via the menu | tap the button **left** of the shutter |
 | Set the self-timer (off → 3 → 5 → 10 → 20 → 30 s) | via the menu | tap the button **right** of the shutter |
+| Zoom (0.5× → 1× → Tele), when your iPhone offers these lenses | via the menu (**Zoom**) | tap the round button **above the lens button**, up-left of the shutter |
 | Switch between **PHOTO** and **VIDEO** | **UP** / **DOWN** | swipe up / down |
 | Menu: mode, lens, light, self-timer, pairing code | hold **UP** | tap the **Options** button at the bottom |
+
+**Zoom** is optical: it switches to another rear lens of the iPhone (ultra wide = 0.5×, the normal camera = 1×, telephoto = Tele). The zoom buttons only appear when Safari offers those lenses on your iPhone; the gear icon shows which lenses were found. Zoom works with the back camera, not while recording.
 
 **Default settings:** tap the gear icon on the Cam Remote page to choose the self-timer, camera (back or selfie) and light the camera starts with. They apply every time you open Cam Remote on your watch. If you installed the app from the Connect IQ Store, the same defaults are also in the app's settings in Garmin Connect; a value chosen there takes priority.
 
